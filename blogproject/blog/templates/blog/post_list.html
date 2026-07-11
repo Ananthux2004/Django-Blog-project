@@ -1,24 +1,32 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Post List</title>
-  </head>
-  <body>
-    <h1>Posts</h1>
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}Post List{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h1 class="mb-4">Posts</h1>
 
     {% if posts %}
-    <ul>
-      {% for post in posts %}
-      <li>
-        <a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a>
-        — {{ post.author.user.username }} — {{ post.created_date }}
-      </li>
-      {% endfor %}
-    </ul>
+      <div class="list-group">
+        {% for post in posts %}
+          <a
+            href="{% url 'post_detail' pk=post.pk %}"
+            class="list-group-item list-group-item-action"
+          >
+            <div class="fw-bold">{{ post.title }}</div>
+            <div class="text-muted small">
+              {{ post.author.user.username }} • {{ post.created_date }}
+            </div>
+          </a>
+        {% endfor %}
+      </div>
     {% else %}
-    <p>No posts available.</p>
+      <p class="text-muted">No posts available.</p>
     {% endif %}
-  </body>
-</html>
+  </div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}
