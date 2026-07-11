@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ post.title }}</title>
+  </head>
+  <body>
+    <h1>{{ post.title }}</h1>
+
+    <p>
+      <strong>Author:</strong> {{ post.author.user.username }}<br />
+      <strong>Status:</strong> {{ post.status }}<br />
+      <strong>Created:</strong> {{ post.created_date }}
+    </p>
+
+    <hr />
+
+    <div>{{ post.content|linebreaks }}</div>
+
+    <p><a href="{% url 'post_list' %}">Back to posts</a></p>
+  </body>
+</html>
