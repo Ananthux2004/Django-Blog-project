@@ -1,23 +1,22 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ post.title }}</title>
-  </head>
-  <body>
-    <h1>{{ post.title }}</h1>
+{% extends "blog/base.html" %} {% load static %} {% block title %}{{ post.title
+}}{% endblock %} {% block extra_css %}{% endblock %} {% block content %}
+<div class="container">
+  <h1 class="mb-3">{{ post.title }}</h1>
 
-    <p>
-      <strong>Author:</strong> {{ post.author.user.username }}<br />
-      <strong>Status:</strong> {{ post.status }}<br />
-      <strong>Created:</strong> {{ post.created_date }}
-    </p>
+  <p class="mb-3">
+    <strong>Author:</strong> {{ post.author.user.username }}<br />
+    <strong>Status:</strong> {{ post.status }}<br />
+    <strong>Created:</strong> {{ post.created_date }}
+  </p>
 
-    <hr />
+  <hr />
 
-    <div>{{ post.content|linebreaks }}</div>
+  <div class="mt-3">{{ post.content|linebreaks }}</div>
 
-    <p><a href="{% url 'post_list' %}">Back to posts</a></p>
-  </body>
-</html>
+  <p class="mt-4">
+    <a href="{% url 'post_list' %}" class="link-primary text-decoration-none"
+      >&larr; Back to posts</a
+    >
+  </p>
+</div>
+{% endblock %} {% block extra_js %}{% endblock %}
