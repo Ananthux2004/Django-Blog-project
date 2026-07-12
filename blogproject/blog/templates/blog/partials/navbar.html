@@ -64,9 +64,40 @@
           <a class="nav-link" href="#">About</a>
         </li>
 
+        {% if user.is_authenticated %}
         <li class="nav-item">
-          <a class="btn btn-primary fw-bold ms-lg-3" href="#">Login</a>
+          <a class="nav-link fw-bold" href="#">{{ user.username }}</a>
         </li>
+        <li class="nav-item">
+          <form
+            class="ms-lg-3"
+            method="post"
+            action="{% url 'accounts:logout' %}"
+          >
+            {% csrf_token %}
+            <button class="btn btn-outline-danger fw-bold" type="submit">
+              Logout
+            </button>
+          </form>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a
+            class="btn btn-primary fw-bold ms-lg-3 me-2"
+            href="{% url 'accounts:login' %}"
+          >
+            Login
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
+            class="btn btn-success fw-bold"
+            href="{% url 'accounts:register' %}"
+          >
+            Register
+          </a>
+        </li>
+        {% endif %}
       </ul>
     </div>
   </div>

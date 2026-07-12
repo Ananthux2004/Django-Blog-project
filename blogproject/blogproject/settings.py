@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Authentication redirects
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "blog:home"
+LOGOUT_REDIRECT_URL = "blog:home"
+
 
 # Application definition
 
@@ -38,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'blog',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -123,3 +129,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Static files (collected for deployment)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Development email backend (needed for activation + password reset emails)
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "DevBlog <no-reply@devblog.local>"
