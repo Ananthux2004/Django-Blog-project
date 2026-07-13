@@ -1,5 +1,9 @@
-{% extends "blog/base.html" %} {% load static %} {% block title %}{{ post.title
-}}{% endblock %} {% block content %}
+{% extends "blog/base.html" %} 
+{% load static %} 
+
+{% block title %}{{ post.title }}{% endblock %} 
+
+{% block content %}
 <div class="container">
   <h1 class="mb-3">{{ post.title }}</h1>
 
@@ -50,5 +54,109 @@
       {% endif %}
     {% endif %}
   </div>
+
+  <!-- ========================================== -->
+  <!-- NEW COMMENT SECTION STARTS HERE            -->
+  <!-- ========================================== -->
+  <hr class="mt-5 mb-4" />
+
+  <div class="comments-section mb-5">
+    <h3 class="mb-4">{{ comments.count }} Comment{{ comments.count|pluralize }}</h3>
+    
+    {% if not comments %}
+      <p class="text-muted">No comments yet. Be the first to comment!</p>
+    {% endif %}
+
+    <!-- List Comments -->
+    {% for comment in comments %}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="card-subtitle text-muted mb-0">
+              <strong>{{ comment.user.username }}</strong> &bull; {{ comment.created_date|date:"M d, Y" }}
+            </h6>
+          </div>
+          <p class="card-text">{{ comment.content|linebreaks }}</p>
+          
+          <div class="d-flex gap-2">
+            <!-- Reply Toggle -->
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#replyBox{{ comment.id }}">
+              Reply
+            </button>
+
+            <!-- Edit / Delete (Owner or Staff) -->
+            {% if request.user == comment.user or request.user.is_staff %}
+              <a href="{% url 'blog:edit_comment' comment.id %}" class="btn btn-sm btn-outline-warning">Edit</a>
+              <form method="POST" action="{% url 'blog:delete_comment' comment.id %}" onsubmit="return confirm('Are you sure you want to delete this comment?');" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+              </form>
+            {% endif %}
+          </div>
+
+          <!-- Reply Form -->
+          <div class="collapse mt-3" id="replyBox{{ comment.id }}">
+            {% if user.is_authenticated %}
+              <form method="POST" action="{% url 'blog:reply_comment' post.slug comment.id %}">
+                {% csrf_token %}
+                {{ comment_form.as_p }}
+                <button type="submit" class="btn btn-sm btn-primary">Submit Reply</button>
+              </form>
+            {% else %}
+              <p class="small text-muted mt-2">Please <a href="{% url 'accounts:login' %}">login</a> to reply.</p>
+            {% endif %}
+          </div>
+
+          <!-- Nested Replies -->
+          {% for reply in comment.replies.all %}
+            {% if reply.is_active and reply.is_approved %}
+              <div class="card mt-3 ms-4 ms-md-5 bg-light border-0 shadow-sm">
+                <div class="card-body py-2">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted">
+                      <strong>{{ reply.user.username }}</strong> &bull; {{ reply.created_date|date:"M d, Y" }}
+                    </small>
+                  </div>
+                  <p class="mb-1 small">{{ reply.content|linebreaks }}</p>
+                  
+                  {% if request.user == reply.user or request.user.is_staff %}
+                    <div class="d-flex gap-2 mt-2">
+                      <a href="{% url 'blog:edit_comment' reply.id %}" class="text-warning small text-decoration-none">Edit</a>
+                      <form method="POST" action="{% url 'blog:delete_comment' reply.id %}" onsubmit="return confirm('Are you sure you want to delete this reply?');" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link text-danger small p-0 text-decoration-none border-0 align-baseline">Delete</button>
+                      </form>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+
+    <!-- Add Comment Form -->
+    <div class="card mt-5 shadow-sm">
+      <div class="card-header bg-light">
+        <h5 class="mb-0">Write a comment</h5>
+      </div>
+      <div class="card-body">
+        {% if user.is_authenticated %}
+          <form method="POST" action="{% url 'blog:add_comment' post.slug %}">
+            {% csrf_token %}
+            {{ comment_form.as_p }}
+            <button type="submit" class="btn btn-primary">Post Comment</button>
+          </form>
+        {% else %}
+          <div class="alert alert-info mb-0">
+            Please <a href="{% url 'accounts:login' %}" class="alert-link">login</a> to write a comment.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
-{% endblock %} {% block extra_js %}{% endblock %}
+{% endblock %} 
+
+{% block extra_js %}{% endblock %}
