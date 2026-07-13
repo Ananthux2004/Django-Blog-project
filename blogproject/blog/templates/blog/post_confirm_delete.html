@@ -1,0 +1,34 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}
+Delete Post
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-3">Delete Post</h1>
+
+    <div class="alert alert-warning">
+        <strong>Are you sure?</strong><br>
+        You are about to delete:
+
+        <div class="mt-2 fw-bold">
+            {{ object.title }}
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <button type="submit" class="btn btn-danger">
+            Yes, Delete
+        </button>
+
+        <a href="{% url 'blog:post_detail' slug=object.slug %}"
+           class="btn btn-secondary">
+            Cancel
+        </a>
+    </form>
+</div>
+{% endblock %}
