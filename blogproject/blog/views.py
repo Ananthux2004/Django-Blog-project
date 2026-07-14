@@ -1,14 +1,27 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.messages.views import SuccessMessageMixin
+<<<<<<< HEAD
 from django.db.models import F
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
+=======
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import F
+from django.http import Http404
+from django.shortcuts import get_object_or_404, render, redirect
+>>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView
 from django.views.generic import UpdateView
 
+<<<<<<< HEAD
 from .forms import PostForm
 from .models import Post
+=======
+from .forms import PostForm, CommentForm
+from .models import Post, Comment
+>>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
 
 
 def home(request):
@@ -57,6 +70,17 @@ class PostDetailView(DetailView):
             return qs
         return qs.published()
 
+<<<<<<< HEAD
+=======
+    def get_context_data(self, **kwargs):
+        # --- NEW CODE: Passing comments and the form to the template ---
+        context = super().get_context_data(**kwargs)
+        # Fetch only approved, active, top-level comments
+        context['comments'] = self.object.comments.filter(is_active=True, is_approved=True, parent__isnull=True)
+        context['comment_form'] = CommentForm()
+        return context
+
+>>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
 
@@ -143,3 +167,86 @@ class PostDetailPkView(PostDetailView):
         if self.request.user.is_staff:
             return qs
         return qs.published()
+<<<<<<< HEAD
+=======
+
+
+# ==========================================
+# --- NEW COMMENT VIEWS START HERE ---
+# ==========================================
+
+@login_required
+def add_comment(request, slug):
+    post = get_object_or_404(Post, slug=slug)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.user = request.user
+            
+            # --- YOUR NEW SUGGESTIONS ---
+            comment.name = request.user.username  # Auto-fill name
+            comment.email = request.user.email    # Auto-fill email
+            comment.is_approved = True            # Auto-approve comment
+            # ----------------------------
+            
+            comment.save()
+            messages.success(request, 'Comment submitted successfully.')
+    return redirect('blog:post_detail', slug=post.slug)
+
+@login_required
+def reply_comment(request, slug, pk):
+    post = get_object_or_404(Post, slug=slug)
+    parent_comment = get_object_or_404(Comment, pk=pk)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            reply = form.save(commit=False)
+            reply.post = post
+            reply.user = request.user
+            reply.parent = parent_comment
+            
+            # --- YOUR NEW SUGGESTIONS ---
+            reply.name = request.user.username  # Auto-fill name
+            reply.email = request.user.email    # Auto-fill email
+            reply.is_approved = True            # Auto-approve reply
+            # ----------------------------
+            
+            reply.save()
+            messages.success(request, 'Reply submitted successfully.')
+    return redirect('blog:post_detail', slug=post.slug)
+@login_required
+def edit_comment(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    
+    # Allow only comment owner or staff to edit
+    if request.user != comment.user and not request.user.is_staff:
+        messages.error(request, 'You do not have permission to edit this comment.')
+        return redirect('blog:post_detail', slug=comment.post.slug)
+
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Comment updated successfully.')
+            return redirect('blog:post_detail', slug=comment.post.slug)
+    else:
+        form = CommentForm(instance=comment)
+        
+    # Uses a basic edit template (you can create blog/comment_edit.html later if needed)
+    return render(request, 'blog/comment_form.html', {'form': form, 'comment': comment})
+
+@login_required
+def delete_comment(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    
+    # Allow only owner or staff to delete (soft delete preferred)
+    if request.user == comment.user or request.user.is_staff:
+        comment.is_active = False # Soft delete
+        comment.save()
+        messages.success(request, 'Comment deleted successfully.')
+    else:
+        messages.error(request, 'You do not have permission to delete this comment.')
+    return redirect('blog:post_detail', slug=comment.post.slug)
+>>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
