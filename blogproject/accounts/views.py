@@ -56,17 +56,20 @@ class AuthLoginView(LoginView):
 
     def get_success_url(self):
         """
-        Redirect staff users to Django admin, others to the blog homepage.
-
-        Recommended over changing LOGIN_REDIRECT_URL because we want per-user
-        conditional logic based on user.is_staff.
+        Redirect to the original requested page if one exists.
+        Otherwise:
+        - Staff users -> Django admin
+        - Normal users -> Blog home
         """
-        user = self.request.user
-        if user.is_authenticated and user.is_staff:
+
+        next_url = self.get_redirect_url()
+        if next_url:
+            return next_url
+
+        if self.request.user.is_staff:
             return reverse_lazy("admin:index")
+
         return reverse_lazy("blog:home")
-
-
 class AuthLogoutView(LogoutView):
     next_page = reverse_lazy("blog:home")
 

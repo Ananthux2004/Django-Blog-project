@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
-
+from django.urls import reverse
 
 class Author(models.Model):
     """
@@ -177,7 +177,6 @@ class Post(models.Model):
     reading_time = models.PositiveIntegerField(default=0)
 
     objects = PostQuerySet.as_manager()
-
     published = PublishedPostManager()
 
     def save(self, *args, **kwargs):
@@ -188,14 +187,12 @@ class Post(models.Model):
     def publish(self):
         self.status = self.StatusChoices.PUBLISHED
         self.published_date = timezone.now()
-        self.updated_date = timezone.now()
+        self.save(update_fields=["status", "published_date"])
 
-        self.save(
-            update_fields=[
-                "status",
-                "published_date",
-                "updated_date",
-            ]
+    def get_absolute_url(self):
+        return reverse(
+            "blog:post_detail",
+            kwargs={"slug": self.slug},
         )
 
     def __str__(self):
@@ -211,8 +208,6 @@ class Post(models.Model):
             models.Index(fields=["created_date"]),
             models.Index(fields=["published_date"]),
         ]
-
-
 class Comment(models.Model):
     post = models.ForeignKey(
         Post,
