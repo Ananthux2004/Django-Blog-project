@@ -1,717 +1,174 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DevBlog</title>
-    <style>
-      :root {
-        --bg: #f6f7fb;
-        --card: #ffffff;
-        --text: #0f172a;
-        --muted: #64748b;
-        --border: rgba(15, 23, 42, 0.12);
-        --shadow: 0 10px 30px rgba(2, 6, 23, 0.06);
-        --accent: #6d28d9;
-        --accent-2: #4f46e5;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        font-family:
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          Segoe UI,
-          Roboto,
-          Helvetica,
-          Arial,
-          "Apple Color Emoji",
-          "Segoe UI Emoji";
-        background: var(--bg);
-        color: var(--text);
-        line-height: 1.5;
-      }
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-      .container {
-        width: min(1120px, calc(100% - 32px));
-        margin: 0 auto;
-      }
+{% extends "blog/base.html" %} {% load static %} {% block title %}DevBlog{%
+endblock %} {% block extra_css %} {% endblock extra_css %}
+<link rel="stylesheet" href="{% static 'blog/css/home.css' %}" />
+{% endblock %} {% block content %}
+<!-- HERO / FEATURED SECTION -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-card">
+      <div class="hero-media">
+        <div
+          class="img"
+          role="img"
+          aria-label="Featured image placeholder"
+        ></div>
+      </div>
 
-      /* NAV */
-      .nav-wrap {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        background: rgba(246, 247, 251, 0.82);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid var(--border);
-      }
-      nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 0;
-        gap: 14px;
-      }
-      .logo {
-        font-weight: 800;
-        letter-spacing: 0.2px;
-        color: var(--text);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        white-space: nowrap;
-      }
-      .logo-badge {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        box-shadow: 0 10px 25px rgba(109, 40, 217, 0.25);
-      }
-      .search {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-      }
-      .search input {
-        width: min(520px, 100%);
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        outline: none;
-        background: #fff;
-      }
-      .search input:focus {
-        border-color: rgba(109, 40, 217, 0.55);
-        box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.12);
-      }
-      .nav-links {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-      }
-      .nav-link {
-        color: var(--muted);
-        font-weight: 600;
-        font-size: 14px;
-      }
-      .nav-link:hover {
-        color: var(--text);
-      }
-      .dropdown {
-        position: relative;
-      }
-      .dropdown button {
-        border: none;
-        background: transparent;
-        color: var(--muted);
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        padding: 0;
-      }
-      .dropdown-menu {
-        position: absolute;
-        right: 0;
-        top: calc(100% + 10px);
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 10px;
-        box-shadow: var(--shadow);
-        min-width: 220px;
-        display: none;
-      }
-      .dropdown:hover .dropdown-menu {
-        display: block;
-      }
-      .dropdown-menu a {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 9px 10px;
-        border-radius: 10px;
-        color: var(--text);
-        font-weight: 600;
-        font-size: 13px;
-      }
-      .dropdown-menu a:hover {
-        background: rgba(109, 40, 217, 0.08);
-        color: var(--accent);
-      }
-      .cta {
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        color: #fff;
-        padding: 10px 16px;
-        border-radius: 14px;
-        font-weight: 800;
-        font-size: 14px;
-        box-shadow: 0 12px 30px rgba(109, 40, 217, 0.25);
-      }
-      .cta:hover {
-        filter: brightness(1.05);
-      }
+      <div class="hero-body">
+        <div class="badge">Trending</div>
 
-      /* HERO */
-      .hero {
-        padding: 26px 0 10px;
-      }
-      .hero-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        box-shadow: var(--shadow);
-        overflow: hidden;
-        display: grid;
-        grid-template-columns: 1fr 1.1fr;
-        min-height: 320px;
-      }
-      .hero-media {
-        background: linear-gradient(
-          135deg,
-          rgba(109, 40, 217, 0.15),
-          rgba(79, 70, 229, 0.1)
-        );
-        position: relative;
-        padding: 22px;
-        display: flex;
-        align-items: flex-end;
-      }
-      .hero-media .img {
-        width: 100%;
-        height: 100%;
-        min-height: 280px;
-        border-radius: 16px;
-        background: #eef2ff;
-        border: 1px dashed rgba(109, 40, 217, 0.35);
-      }
-      .hero-body {
-        padding: 28px 26px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 14px;
-      }
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: rgba(109, 40, 217, 0.1);
-        color: var(--accent);
-        font-weight: 900;
-        font-size: 13px;
-        width: max-content;
-      }
-      .hero h1 {
-        margin: 0;
-        font-size: 34px;
-        line-height: 1.15;
-        letter-spacing: -0.4px;
-      }
-      .meta {
-        color: var(--muted);
-        font-weight: 700;
-        font-size: 13px;
-      }
-      .teaser {
-        color: #334155;
-        font-weight: 600;
-        max-width: 44ch;
-      }
-      .teaser span {
-        color: var(--muted);
-        font-weight: 700;
-      }
-      .hero-actions {
-        margin-top: 6px;
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 11px 14px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: #fff;
-        font-weight: 900;
-        color: var(--text);
-      }
-      .btn-primary {
-        border: 1px solid rgba(109, 40, 217, 0.35);
-        background: rgba(109, 40, 217, 0.1);
-        color: var(--accent);
-      }
+        <h1>The Future of Web Development in 2026</h1>
 
-      /* MAIN GRID */
-      .main {
-        padding: 18px 0 48px;
-      }
-      .layout {
-        display: grid;
-        grid-template-columns: 7fr 3fr;
-        gap: 22px;
-        align-items: start;
-      }
-      .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-      }
-      .post-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        box-shadow: 0 8px 18px rgba(2, 6, 23, 0.04);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        min-height: 260px;
-      }
-      .post-media {
-        padding: 14px 14px 0;
-      }
-      .aspect {
-        width: 100%;
-        aspect-ratio: 16 / 9;
-        border-radius: 14px;
-        background: #eef2ff;
-        border: 1px dashed rgba(109, 40, 217, 0.35);
-      }
-      .post-body {
-        padding: 14px 14px 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        flex: 1;
-      }
-      .tag {
-        width: max-content;
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(109, 40, 217, 0.1);
-        color: var(--accent);
-        font-weight: 900;
-        font-size: 12px;
-      }
-      .post-card h2 {
-        margin: 0;
-        font-size: 18px;
-        letter-spacing: -0.2px;
-        line-height: 1.2;
-      }
-      .excerpt {
-        color: #334155;
-        font-weight: 650;
-        font-size: 13.5px;
-      }
-      .small-meta {
-        margin-top: auto;
-        color: var(--muted);
-        font-weight: 800;
-        font-size: 12px;
-      }
-      .small-meta span {
-        margin-right: 8px;
-      }
+        <div class="meta">By DevBlog Team • July 9, 2026 • 5 min read</div>
 
-      /* SIDEBAR */
-      .sidebar {
-        position: sticky;
-        top: 92px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-      .widget {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        box-shadow: 0 10px 24px rgba(2, 6, 23, 0.04);
-        padding: 16px;
-      }
-      .widget h3 {
-        margin: 0 0 10px;
-        font-size: 15px;
-        letter-spacing: -0.15px;
-      }
-      .widget p {
-        margin: 0 0 12px;
-        color: var(--muted);
-        font-weight: 650;
-        font-size: 13px;
-      }
-      .widget label {
-        display: block;
-        font-weight: 800;
-        font-size: 13px;
-        margin-bottom: 8px;
-      }
-      .newsletter {
-        display: flex;
-        gap: 10px;
-      }
-      .newsletter input {
-        flex: 1;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        outline: none;
-        background: #fff;
-      }
-      .newsletter input:focus {
-        border-color: rgba(109, 40, 217, 0.55);
-        box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.12);
-      }
-      .newsletter button {
-        padding: 10px 14px;
-        border-radius: 12px;
-        border: none;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        color: #fff;
-        font-weight: 900;
-        cursor: pointer;
-        white-space: nowrap;
-      }
-      .newsletter button:hover {
-        filter: brightness(1.05);
-      }
-      .tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-      .pill {
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.8);
-        color: var(--accent);
-        font-weight: 900;
-        font-size: 13px;
-      }
-      .pill:hover {
-        border-color: rgba(109, 40, 217, 0.35);
-        background: rgba(109, 40, 217, 0.08);
-      }
+        <div class="teaser">
+          Web platforms are evolving fast with new rendering patterns, safer UX,
+          and AI-assisted workflows.
+          <span> Here’s what to watch.</span>
+        </div>
 
-      /* FOOTER */
-      footer {
-        border-top: 1px solid var(--border);
-        background: rgba(246, 247, 251, 0.65);
-      }
-      .footer-inner {
-        padding: 18px 0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        flex-wrap: wrap;
-      }
-      .footer-text {
-        color: var(--muted);
-        font-weight: 700;
-        font-size: 13px;
-      }
-      .footer-links {
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-      }
-      .footer-links a {
-        color: var(--muted);
-        font-weight: 800;
-        font-size: 13px;
-      }
-      .footer-links a:hover {
-        color: var(--accent);
-      }
-      .social {
-        color: var(--muted);
-        font-weight: 800;
-        font-size: 13px;
-      }
-      /* RESPONSIVE */
-      @media (max-width: 980px) {
-        .hero-card {
-          grid-template-columns: 1fr;
-        }
-        .hero-media .img {
-          min-height: 240px;
-        }
-        .layout {
-          grid-template-columns: 1fr;
-        }
-        .sidebar {
-          position: relative;
-          top: auto;
-        }
-        .cards-grid {
-          grid-template-columns: 1fr;
-        }
-        .search {
-          justify-content: flex-start;
-        }
-        nav {
-          flex-wrap: wrap;
-        }
-        .nav-links {
-          width: 100%;
-          justify-content: space-between;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <!-- GLOBAL NAVIGATION HEADER (sticky) -->
-    <div class="nav-wrap">
-      <div class="container">
-        <nav aria-label="Primary navigation">
-          <div class="logo" aria-label="DevBlog">
-            <div class="logo-badge" aria-hidden="true"></div>
-            <span>DevBlog</span>
-          </div>
-
-          <div class="search">
-            <input
-              type="text"
-              placeholder="Search posts, categories, authors..."
-              aria-label="Search"
-            />
-          </div>
-
-          <div class="nav-links" aria-label="Navigation links">
-            <a class="nav-link" href="/">Home</a>
-
-            <div class="dropdown">
-              <button type="button">Categories ▾</button>
-              <div class="dropdown-menu" role="menu" aria-label="Categories">
-                <a href="#"><span>#tech</span><span>→</span></a>
-                <a href="#"><span>#design</span><span>→</span></a>
-                <a href="#"><span>#ai</span><span>→</span></a>
-                <a href="#"><span>#javascript</span><span>→</span></a>
-              </div>
-            </div>
-
-            <a class="nav-link" href="#">About</a>
-
-            <a class="cta" href="#">Login</a>
-          </div>
-        </nav>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/blog/">
+            <span>Explore Latest Posts</span>
+          </a>
+          <a class="btn" href="/blog/">
+            <span>Read Now</span>
+          </a>
+        </div>
       </div>
     </div>
+  </div>
+</section>
 
-    <!-- HERO / FEATURED SECTION -->
-    <section class="hero">
-      <div class="container">
-        <div class="hero-card">
-          <div class="hero-media">
-            <div
-              class="img"
-              role="img"
-              aria-label="Featured image placeholder"
-            ></div>
-          </div>
-
-          <div class="hero-body">
-            <div class="badge">Trending</div>
-
-            <h1>The Future of Web Development in 2026</h1>
-
-            <div class="meta">By DevBlog Team • July 9, 2026 • 5 min read</div>
-
-            <div class="teaser">
-              Web platforms are evolving fast with new rendering patterns, safer
-              UX, and AI-assisted workflows.
-              <span> Here’s what to watch.</span>
+<!-- TWO-COLUMN MAIN BODY LAYOUT -->
+<main class="main">
+  <div class="container">
+    <div class="layout">
+      <!-- MAIN COLUMN (70%) -->
+      <section aria-label="Latest posts">
+        <div class="cards-grid">
+          <!-- 4 latest post preview cards -->
+          <article class="post-card">
+            <div class="post-media">
+              <div
+                class="aspect"
+                role="img"
+                aria-label="Post image placeholder"
+              ></div>
             </div>
-
-            <div class="hero-actions">
-              <a class="btn btn-primary" href="/blog/"
-                ><span>Explore Latest Posts</span></a
-              >
-              <a class="btn" href="/blog/"><span>Read Now</span></a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TWO-COLUMN MAIN BODY LAYOUT -->
-    <main class="main">
-      <div class="container">
-        <div class="layout">
-          <!-- MAIN COLUMN (70%) -->
-          <section aria-label="Latest posts">
-            <div class="cards-grid">
-              <!-- 4 latest post preview cards -->
-              <article class="post-card">
-                <div class="post-media">
-                  <div
-                    class="aspect"
-                    role="img"
-                    aria-label="Post image placeholder"
-                  ></div>
-                </div>
-                <div class="post-body">
-                  <div class="tag">Latest</div>
-                  <h2>Modern CSS Layouts: Grid &amp; Beyond</h2>
-                  <p class="excerpt">
-                    Learn how to build resilient layouts using modern CSS
-                    techniques that stay sharp across devices.
-                  </p>
-                  <div class="small-meta">
-                    <span>By Alex</span> <span>•</span> <span>Aug 2026</span>
-                  </div>
-                </div>
-              </article>
-
-              <article class="post-card">
-                <div class="post-media">
-                  <div
-                    class="aspect"
-                    role="img"
-                    aria-label="Post image placeholder"
-                  ></div>
-                </div>
-                <div class="post-body">
-                  <div class="tag">Latest</div>
-                  <h2>Type-Safe APIs with Django ORM Patterns</h2>
-                  <p class="excerpt">
-                    Improve your Django data access using QuerySet composition
-                    and clean manager APIs.
-                  </p>
-                  <div class="small-meta">
-                    <span>By Sam</span> <span>•</span> <span>Aug 2026</span>
-                  </div>
-                </div>
-              </article>
-
-              <article class="post-card">
-                <div class="post-media">
-                  <div
-                    class="aspect"
-                    role="img"
-                    aria-label="Post image placeholder"
-                  ></div>
-                </div>
-                <div class="post-body">
-                  <div class="tag">Latest</div>
-                  <h2>JavaScript Performance: What Actually Matters</h2>
-                  <p class="excerpt">
-                    Avoid common slowdowns and focus on the metrics that move
-                    user experience forward.
-                  </p>
-                  <div class="small-meta">
-                    <span>By Priya</span> <span>•</span> <span>Sep 2026</span>
-                  </div>
-                </div>
-              </article>
-
-              <article class="post-card">
-                <div class="post-media">
-                  <div
-                    class="aspect"
-                    role="img"
-                    aria-label="Post image placeholder"
-                  ></div>
-                </div>
-                <div class="post-body">
-                  <div class="tag">Latest</div>
-                  <h2>AI-Assisted Development Workflows</h2>
-                  <p class="excerpt">
-                    Bring AI into your dev lifecycle with reviewable outputs and
-                    guardrails you can trust.
-                  </p>
-                  <div class="small-meta">
-                    <span>By Jordan</span> <span>•</span> <span>Sep 2026</span>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </section>
-
-          <!-- SIDEBAR COLUMN (30%) -->
-          <aside class="sidebar" aria-label="Sidebar">
-            <!-- Widget 1 -->
-            <div class="widget">
-              <h3>Subscribe to Newsletter</h3>
-              <p>
-                Get weekly posts on web engineering, design, and practical AI
-                workflows.
+            <div class="post-body">
+              <div class="tag">Latest</div>
+              <h2>Modern CSS Layouts: Grid &amp; Beyond</h2>
+              <p class="excerpt">
+                Learn how to build resilient layouts using modern CSS techniques
+                that stay sharp across devices.
               </p>
-              <form class="newsletter" action="#" method="post">
-                <label for="email" class="sr-only" style="display: none"
-                  >Email</label
-                >
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  required
-                />
-                <button type="submit">Subscribe</button>
-              </form>
-            </div>
-
-            <!-- Widget 2 -->
-            <div class="widget">
-              <h3>Popular Tags</h3>
-              <div class="tags">
-                <a class="pill" href="#">#tech</a>
-                <a class="pill" href="#">#design</a>
-                <a class="pill" href="#">#ai</a>
-                <a class="pill" href="#">#javascript</a>
+              <div class="small-meta">
+                <span>By Alex</span> <span>•</span> <span>Aug 2026</span>
               </div>
             </div>
-          </aside>
+          </article>
+
+          <article class="post-card">
+            <div class="post-media">
+              <div
+                class="aspect"
+                role="img"
+                aria-label="Post image placeholder"
+              ></div>
+            </div>
+            <div class="post-body">
+              <div class="tag">Latest</div>
+              <h2>Type-Safe APIs with Django ORM Patterns</h2>
+              <p class="excerpt">
+                Improve your Django data access using QuerySet composition and
+                clean manager APIs.
+              </p>
+              <div class="small-meta">
+                <span>By Sam</span> <span>•</span> <span>Aug 2026</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="post-card">
+            <div class="post-media">
+              <div
+                class="aspect"
+                role="img"
+                aria-label="Post image placeholder"
+              ></div>
+            </div>
+            <div class="post-body">
+              <div class="tag">Latest</div>
+              <h2>JavaScript Performance: What Actually Matters</h2>
+              <p class="excerpt">
+                Avoid common slowdowns and focus on the metrics that move user
+                experience forward.
+              </p>
+              <div class="small-meta">
+                <span>By Priya</span> <span>•</span> <span>Sep 2026</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="post-card">
+            <div class="post-media">
+              <div
+                class="aspect"
+                role="img"
+                aria-label="Post image placeholder"
+              ></div>
+            </div>
+            <div class="post-body">
+              <div class="tag">Latest</div>
+              <h2>AI-Assisted Development Workflows</h2>
+              <p class="excerpt">
+                Bring AI into your dev lifecycle with reviewable outputs and
+                guardrails you can trust.
+              </p>
+              <div class="small-meta">
+                <span>By Jordan</span> <span>•</span> <span>Sep 2026</span>
+              </div>
+            </div>
+          </article>
         </div>
-      </div>
-    </main>
+      </section>
 
-    <!-- GLOBAL FOOTER -->
-    <footer>
-      <div class="container">
-        <div class="footer-inner">
-          <div class="footer-text">© 2026 DevBlog. All rights reserved.</div>
+      <!-- SIDEBAR COLUMN (30%) -->
+      <aside class="sidebar" aria-label="Sidebar">
+        <!-- Widget 1 -->
+        <div class="widget">
+          <h3>Subscribe to Newsletter</h3>
+          <p>
+            Get weekly posts on web engineering, design, and practical AI
+            workflows.
+          </p>
+          <form class="newsletter" action="#" method="post">
+            <label for="email" class="sr-only" style="display: none"
+              >Email</label
+            >
+            <input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              required
+            />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
 
-          <div class="footer-links" aria-label="Footer links">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Contact</a>
-          </div>
-
-          <div class="social">
-            Social:
-            <a href="#" style="color: var(--accent); font-weight: 900"
-              >Twitter</a
-            >
-            •
-            <a href="#" style="color: var(--accent); font-weight: 900"
-              >GitHub</a
-            >
-            •
-            <a href="#" style="color: var(--accent); font-weight: 900"
-              >LinkedIn</a
-            >
+        <!-- Widget 2 -->
+        <div class="widget">
+          <h3>Popular Tags</h3>
+          <div class="tags">
+            <a class="pill" href="#">#tech</a>
+            <a class="pill" href="#">#design</a>
+            <a class="pill" href="#">#ai</a>
+            <a class="pill" href="#">#javascript</a>
           </div>
         </div>
-      </div>
-    </footer>
-  </body>
-</html>
+      </aside>
+    </div>
+  </div>
+</main>
+{% endblock %} {% block extra_js %}{% endblock %}

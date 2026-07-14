@@ -1,26 +1,116 @@
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils import timezone
-
+from django.utils.text import slugify
+from django.urls import reverse
 
 class Author(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    """
+    Stores a profile for a Django User.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+
     bio = models.TextField(max_length=500, blank=True)
+
     profile_picture = models.ImageField(
-        upload_to='authors/', blank=True, null=True)
-    website = models.URLField(blank=True)
+        upload_to="authors/",
+        blank=True,
+        null=True,
+    )
+
+    website = models.URLField(blank=True, null=True)
     joined_date = models.DateTimeField(auto_now_add=True)
+
+    github = models.URLField(blank=True, null=True)
+    linkedin = models.URLField(blank=True, null=True)
+    twitter = models.URLField(blank=True, null=True)
+
+    location = models.CharField(max_length=255, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.user.username
 
     class Meta:
-        ordering = ['-joined_date']
+        verbose_name = "Author"
+        verbose_name_plural = "Authors"
+        ordering = ["-joined_date"]
+        indexes = [
+            models.Index(fields=["joined_date"]),
+            models.Index(fields=["updated_at"]),
+        ]
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+
+    slug = models.SlugField(
+        max_length=255,
+        unique=True,
+        blank=True,
+    )
+
+    description = models.TextField(blank=True)
+
+    image = models.ImageField(
+        upload_to="categories/",
+        blank=True,
+        null=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["slug"]),
+        ]
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=80, unique=True)
+
+    slug = models.SlugField(
+        max_length=255,
+        unique=True,
+        blank=True,
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Tag"
+        verbose_name_plural = "Tags"
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["slug"]),
+        ]
 
 
 class PostQuerySet(models.QuerySet):
     def published(self):
-        return self.filter(status='published')
+        return self.filter(status=Post.StatusChoices.PUBLISHED)
 
 
 class PublishedPostManager(models.Manager):
@@ -29,54 +119,143 @@ class PublishedPostManager(models.Manager):
 
 
 class Post(models.Model):
-    STATUS_CHOICES = [('draft', 'Draft'), ('published', 'Published')]
+
+    class StatusChoices(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
 
     title = models.CharField(max_length=200, unique=True)
+
+    slug = models.SlugField(
+        max_length=255,
+        unique=True,
+        blank=True,
+    )
+
+    excerpt = models.TextField(blank=True)
+
     content = models.TextField()
+
     author = models.ForeignKey(
-        Author, on_delete=models.CASCADE, related_name='posts')
+        Author,
+        on_delete=models.CASCADE,
+        related_name="posts",
+    )
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        related_name="posts",
+        blank=True,
+        null=True,
+    )
+
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name="posts",
+    )
+
     status = models.CharField(
-        max_length=10, choices=STATUS_CHOICES, default='draft')
+        max_length=10,
+        choices=StatusChoices.choices,
+        default=StatusChoices.DRAFT,
+    )
+
     featured_image = models.ImageField(
-        upload_to='posts/', blank=True, null=True)
+        upload_to="posts/",
+        blank=True,
+        null=True,
+    )
 
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    published_date = models.DateTimeField(null=True, blank=True)
+    published_date = models.DateTimeField(blank=True, null=True)
 
-    # Default manager with all posts
+    is_featured = models.BooleanField(default=False)
+    views = models.PositiveIntegerField(default=0)
+    reading_time = models.PositiveIntegerField(default=0)
+
     objects = PostQuerySet.as_manager()
-    # Extra manager that returns only published posts
-    published_objects = PublishedPostManager()
+    published = PublishedPostManager()
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    def publish(self):
+        self.status = self.StatusChoices.PUBLISHED
+        self.published_date = timezone.now()
+        self.save(update_fields=["status", "published_date"])
+
+    def get_absolute_url(self):
+        return reverse(
+            "blog:post_detail",
+            kwargs={"slug": self.slug},
+        )
 
     def __str__(self):
         return self.title
 
     class Meta:
-        ordering = ['-published_date']
-
-    def publish(self):
-        self.status = 'published'
-        self.published_date = timezone.now()
-        self.save()
-
-
+        verbose_name = "Post"
+        verbose_name_plural = "Posts"
+        ordering = ["-created_date"]
+        indexes = [
+            models.Index(fields=["slug"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["created_date"]),
+            models.Index(fields=["published_date"]),
+        ]
 class Comment(models.Model):
     post = models.ForeignKey(
-        Post, on_delete=models.CASCADE, related_name='comments')
+        Post,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+
     name = models.CharField(max_length=80)
     email = models.EmailField()
     content = models.TextField()
+
     created_date = models.DateTimeField(auto_now_add=True)
+
     is_approved = models.BooleanField(default=False)
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="comments",
+        blank=True,
+        null=True,
+    )
+
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="replies",
+        blank=True,
+        null=True,
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def approve(self):
+        self.is_approved = True
+        self.is_active = True
+        self.save()
 
     def __str__(self):
         return f"Comment by {self.name} on {self.post.title}"
 
     class Meta:
-        ordering = ['created_date']
-
-    def approve(self):
-        """Approve the comment"""
-        self.is_approved = True
-        self.save()
+        verbose_name = "Comment"
+        verbose_name_plural = "Comments"
+        ordering = ["-created_date"]
+        indexes = [
+            models.Index(fields=["created_date"]),
+            models.Index(fields=["is_active"]),
+        ]
