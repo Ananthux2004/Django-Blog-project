@@ -1,27 +1,16 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.messages.views import SuccessMessageMixin
-<<<<<<< HEAD
-from django.db.models import F
-from django.http import Http404
-from django.shortcuts import get_object_or_404, render
-=======
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import F
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render, redirect
->>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView
 from django.views.generic import UpdateView
 
-<<<<<<< HEAD
-from .forms import PostForm
-from .models import Post
-=======
 from .forms import PostForm, CommentForm
 from .models import Post, Comment
->>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
 
 
 def home(request):
@@ -70,8 +59,6 @@ class PostDetailView(DetailView):
             return qs
         return qs.published()
 
-<<<<<<< HEAD
-=======
     def get_context_data(self, **kwargs):
         # --- NEW CODE: Passing comments and the form to the template ---
         context = super().get_context_data(**kwargs)
@@ -80,7 +67,6 @@ class PostDetailView(DetailView):
         context['comment_form'] = CommentForm()
         return context
 
->>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
 
@@ -167,8 +153,6 @@ class PostDetailPkView(PostDetailView):
         if self.request.user.is_staff:
             return qs
         return qs.published()
-<<<<<<< HEAD
-=======
 
 
 # ==========================================
@@ -249,4 +233,3 @@ def delete_comment(request, pk):
     else:
         messages.error(request, 'You do not have permission to delete this comment.')
     return redirect('blog:post_detail', slug=comment.post.slug)
->>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d

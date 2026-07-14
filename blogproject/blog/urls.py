@@ -37,9 +37,6 @@ urlpatterns = [
         views.PostDetailPkView.as_view(),
         name="post_detail_old_pk",
     ),
-<<<<<<< HEAD
-]
-=======
 
     # ==========================================
     # --- NEW COMMENT ROUTES START HERE ---
@@ -65,4 +62,3 @@ urlpatterns = [
         name="delete_comment",
     ),
 ]
->>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d

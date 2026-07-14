@@ -1,11 +1,6 @@
 from django import forms
-<<<<<<< HEAD
-
-from .models import Post
-=======
 # Added Comment to the import below
 from .models import Post, Comment
->>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
 
 
 class PostForm(forms.ModelForm):
@@ -34,8 +29,6 @@ class PostForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "form-select"}),
             "is_featured": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
-<<<<<<< HEAD
-=======
 
 # --- NEW COMMENT FORM ADDED BELOW ---
 
@@ -62,4 +55,3 @@ class CommentForm(forms.ModelForm):
         if content:
             return content.strip()
         return content
->>>>>>> 5cc9867f4a4bdeb22ab5dbdb98edbe6a2278d16d
