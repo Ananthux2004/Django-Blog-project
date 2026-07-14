@@ -37,4 +37,28 @@ urlpatterns = [
         views.PostDetailPkView.as_view(),
         name="post_detail_old_pk",
     ),
+
+    # ==========================================
+    # --- NEW COMMENT ROUTES START HERE ---
+    # ==========================================
+    path(
+        "post/<slug:slug>/comment/",
+        views.add_comment,
+        name="add_comment",
+    ),
+    path(
+        "post/<slug:slug>/reply/<int:pk>/",
+        views.reply_comment,
+        name="reply_comment",
+    ),
+    path(
+        "comment/<int:pk>/edit/",
+        views.edit_comment,
+        name="edit_comment",
+    ),
+    path(
+        "comment/<int:pk>/delete/",
+        views.delete_comment,
+        name="delete_comment",
+    ),
 ]
