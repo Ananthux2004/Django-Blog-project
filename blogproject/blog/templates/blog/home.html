@@ -1,174 +1,129 @@
-{% extends "blog/base.html" %} {% load static %} {% block title %}DevBlog{%
-endblock %} {% block extra_css %} {% endblock extra_css %}
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}DevBlog - Home{% endblock %}
+
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'blog/css/home.css' %}" />
-{% endblock %} {% block content %}
+{% endblock extra_css %}
+
+{% block content %}
 <!-- HERO / FEATURED SECTION -->
 <section class="hero">
   <div class="container">
-    <div class="hero-card">
-      <div class="hero-media">
-        <div
-          class="img"
-          role="img"
-          aria-label="Featured image placeholder"
-        ></div>
-      </div>
-
-      <div class="hero-body">
-        <div class="badge">Trending</div>
-
-        <h1>The Future of Web Development in 2026</h1>
-
-        <div class="meta">By DevBlog Team • July 9, 2026 • 5 min read</div>
-
-        <div class="teaser">
-          Web platforms are evolving fast with new rendering patterns, safer UX,
-          and AI-assisted workflows.
-          <span> Here’s what to watch.</span>
+    {% if featured_post %}
+      <!-- Dynamic Featured Post Layout -->
+      <div class="hero-card">
+        <div class="hero-media">
+          {% if featured_post.featured_image %}
+            <img src="{{ featured_post.featured_image.url }}" class="img-fluid rounded" alt="{{ featured_post.title }}">
+          {% else %}
+            <div class="img" role="img" aria-label="Featured image placeholder"></div>
+          {% endif %}
         </div>
 
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="/blog/">
-            <span>Explore Latest Posts</span>
-          </a>
-          <a class="btn" href="/blog/">
-            <span>Read Now</span>
-          </a>
+        <div class="hero-body">
+          <div class="badge bg-warning text-dark">Featured</div>
+          <h1>{{ featured_post.title }}</h1>
+          <div class="meta">By {{ featured_post.author.username }} • {{ featured_post.published_date|date:"M d, Y" }} • {{ featured_post.reading_time }} min read</div>
+          <div class="teaser">{{ featured_post.excerpt }}</div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="{% url 'blog:post_detail' featured_post.slug %}">
+              <span>Read Now</span>
+            </a>
+            <a class="btn btn-outline-light" href="{% url 'blog:post_list' %}">
+              <span>Explore All Posts</span>
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+    {% else %}
+      <!-- Clean Fallback Layout if No Featured Post Exists -->
+      <div class="hero-card">
+        <div class="hero-media">
+          <div class="img" role="img" aria-label="DevBlog Welcome banner"></div>
+        </div>
+        <div class="hero-body">
+          <div class="badge bg-primary">Welcome</div>
+          <h1>The DevBlog Engineering Hub</h1>
+          <div class="teaser">Explore our full suite of technical writeups regarding modern design patterns, systems architecture, and web optimization practices.</div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="{% url 'blog:post_list' %}">
+              <span>Explore Latest Posts</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
   </div>
 </section>
 
 <!-- TWO-COLUMN MAIN BODY LAYOUT -->
-<main class="main">
+<main class="main my-5">
   <div class="container">
-    <div class="layout">
-      <!-- MAIN COLUMN (70%) -->
-      <section aria-label="Latest posts">
-        <div class="cards-grid">
-          <!-- 4 latest post preview cards -->
-          <article class="post-card">
-            <div class="post-media">
-              <div
-                class="aspect"
-                role="img"
-                aria-label="Post image placeholder"
-              ></div>
+    <div class="row">
+      <!-- MAIN COLUMN (70% width via Bootstrap layout adjustments) -->
+      <section class="col-md-8" aria-label="Latest posts">
+        <h2 class="mb-4 pb-2 border-bottom">Latest Updates</h2>
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+          {% for post in latest_posts %}
+            <div class="col">
+              <article class="card h-100 shadow-sm border-0">
+                {% if post.featured_image %}
+                  <img src="{{ post.featured_image.url }}" class="card-img-top" alt="{{ post.title }}">
+                {% else %}
+                  <div class="bg-secondary text-white text-center py-5 rounded-top" style="height: 180px; display: flex; align-items: center; justify-content: center;">
+                    <span>No Image Available</span>
+                  </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                  <div class="mb-2">
+                    <span class="badge bg-primary">{{ post.category.name }}</span>
+                  </div>
+                  <h3 class="card-title h5">
+                    <a href="{% url 'blog:post_detail' post.slug %}" class="text-decoration-none text-dark fw-bold">{{ post.title }}</a>
+                  </h3>
+                  <p class="card-text text-muted small flex-grow-1">{{ post.excerpt|truncatewords:20 }}</p>
+                  <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center text-muted small">
+                    <span>👤 {{ post.author.username }}</span>
+                    <span>🗓️ {{ post.published_date|date:"M Y" }}</span>
+                  </div>
+                </div>
+              </article>
             </div>
-            <div class="post-body">
-              <div class="tag">Latest</div>
-              <h2>Modern CSS Layouts: Grid &amp; Beyond</h2>
-              <p class="excerpt">
-                Learn how to build resilient layouts using modern CSS techniques
-                that stay sharp across devices.
-              </p>
-              <div class="small-meta">
-                <span>By Alex</span> <span>•</span> <span>Aug 2026</span>
+          {% empty %}
+            <div class="col-12">
+              <div class="alert alert-info" role="alert">
+                No articles have been added to the system yet.
               </div>
             </div>
-          </article>
-
-          <article class="post-card">
-            <div class="post-media">
-              <div
-                class="aspect"
-                role="img"
-                aria-label="Post image placeholder"
-              ></div>
-            </div>
-            <div class="post-body">
-              <div class="tag">Latest</div>
-              <h2>Type-Safe APIs with Django ORM Patterns</h2>
-              <p class="excerpt">
-                Improve your Django data access using QuerySet composition and
-                clean manager APIs.
-              </p>
-              <div class="small-meta">
-                <span>By Sam</span> <span>•</span> <span>Aug 2026</span>
-              </div>
-            </div>
-          </article>
-
-          <article class="post-card">
-            <div class="post-media">
-              <div
-                class="aspect"
-                role="img"
-                aria-label="Post image placeholder"
-              ></div>
-            </div>
-            <div class="post-body">
-              <div class="tag">Latest</div>
-              <h2>JavaScript Performance: What Actually Matters</h2>
-              <p class="excerpt">
-                Avoid common slowdowns and focus on the metrics that move user
-                experience forward.
-              </p>
-              <div class="small-meta">
-                <span>By Priya</span> <span>•</span> <span>Sep 2026</span>
-              </div>
-            </div>
-          </article>
-
-          <article class="post-card">
-            <div class="post-media">
-              <div
-                class="aspect"
-                role="img"
-                aria-label="Post image placeholder"
-              ></div>
-            </div>
-            <div class="post-body">
-              <div class="tag">Latest</div>
-              <h2>AI-Assisted Development Workflows</h2>
-              <p class="excerpt">
-                Bring AI into your dev lifecycle with reviewable outputs and
-                guardrails you can trust.
-              </p>
-              <div class="small-meta">
-                <span>By Jordan</span> <span>•</span> <span>Sep 2026</span>
-              </div>
-            </div>
-          </article>
+          {% endfor %}
         </div>
       </section>
 
-      <!-- SIDEBAR COLUMN (30%) -->
-      <aside class="sidebar" aria-label="Sidebar">
-        <!-- Widget 1 -->
-        <div class="widget">
-          <h3>Subscribe to Newsletter</h3>
-          <p>
-            Get weekly posts on web engineering, design, and practical AI
-            workflows.
-          </p>
-          <form class="newsletter" action="#" method="post">
-            <label for="email" class="sr-only" style="display: none"
-              >Email</label
-            >
-            <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              required
-            />
-            <button type="submit">Subscribe</button>
-          </form>
-        </div>
-
-        <!-- Widget 2 -->
-        <div class="widget">
-          <h3>Popular Tags</h3>
-          <div class="tags">
-            <a class="pill" href="#">#tech</a>
-            <a class="pill" href="#">#design</a>
-            <a class="pill" href="#">#ai</a>
-            <a class="pill" href="#">#javascript</a>
+      <!-- SIDEBAR COLUMN (30% width) -->
+      <aside class="col-md-4">
+        <!-- Part 6: Integrated the reusable Phase 2.5 Sidebar Component here -->
+        {% include "blog/partials/_sidebar.html" %}
+        
+        <!-- Retained your layout static subscription block below the main sidebar cards -->
+        <div class="card mb-4 shadow-sm border-0 bg-light">
+          <div class="card-body">
+            <h5 class="fw-bold">Subscribe to Newsletter</h5>
+            <p class="text-muted small">Get weekly posts on web engineering, design, and practical AI workflows.</p>
+            <form class="newsletter-form" action="#" method="post">
+              {% csrf_token %}
+              <div class="input-group mb-2">
+                <input type="email" class="form-control form-control-sm" placeholder="you@example.com" required aria-label="Email Address input">
+                <button class="btn btn-sm btn-dark" type="submit">Subscribe</button>
+              </div>
+            </form>
           </div>
         </div>
       </aside>
     </div>
   </div>
 </main>
-{% endblock %} {% block extra_js %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}{% endblock %}

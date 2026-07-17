@@ -1,10 +1,14 @@
 {% extends "blog/base.html" %}
+
 {% block content %}
 <div class="container my-5">
     <div class="row">
-        <!-- Main Content Column -->
         <div class="col-md-8">
-            <h1 class="mb-4">All Posts</h1>
+            <div class="p-4 mb-4 bg-light rounded shadow-sm">
+                <h1 class="display-5 text-primary fw-bold">{{ category.name }}</h1>
+                <p class="lead text-muted mb-0">{{ category.description|default:"Browsing all posts categorized here." }}</p>
+            </div>
+
             {% for post in posts %}
                 <div class="card mb-4 shadow-sm">
                     {% if post.featured_image %}
@@ -13,8 +17,8 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="badge bg-primary">{{ post.category.name }}</span>
-                            {% if post.is_featured %}
-                                <span class="badge bg-warning text-dark">Featured</span>
+                            {% if post.status == 'draft' %}
+                                <span class="badge bg-secondary">Draft</span>
                             {% endif %}
                         </div>
                         <h2 class="card-title h4">{{ post.title }}</h2>
@@ -27,12 +31,11 @@
                 </div>
             {% empty %}
                 <div class="alert alert-info" role="alert">
-                    No posts have been published yet.
+                    No posts exist under this category yet.
                 </div>
             {% endfor %}
         </div>
-        
-        <!-- Sidebar Column -->
+
         <div class="col-md-4">
             {% include "blog/partials/_sidebar.html" %}
         </div>

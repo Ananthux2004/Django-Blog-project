@@ -2,9 +2,10 @@
 {% block content %}
 <div class="container my-5">
     <div class="row">
-        <!-- Main Content Column -->
         <div class="col-md-8">
-            <h1 class="mb-4">All Posts</h1>
+            <h1 class="mb-2">Search Results</h1>
+            <p class="text-muted mb-4">Found {{ posts.count }} matching results for: <strong>"{{ search_query }}"</strong></p>
+            
             {% for post in posts %}
                 <div class="card mb-4 shadow-sm">
                     {% if post.featured_image %}
@@ -13,9 +14,14 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="badge bg-primary">{{ post.category.name }}</span>
-                            {% if post.is_featured %}
-                                <span class="badge bg-warning text-dark">Featured</span>
-                            {% endif %}
+                            <div>
+                                {% if post.status == 'draft' %}
+                                    <span class="badge bg-secondary">Draft</span>
+                                {% endif %}
+                                {% if post.is_featured %}
+                                    <span class="badge bg-warning text-dark">Featured</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <h2 class="card-title h4">{{ post.title }}</h2>
                         <p class="card-text text-muted">{{ post.excerpt }}</p>
@@ -26,13 +32,12 @@
                     </div>
                 </div>
             {% empty %}
-                <div class="alert alert-info" role="alert">
-                    No posts have been published yet.
+                <div class="alert alert-warning animate-fade" role="alert">
+                    No matching results found for "{{ search_query }}". Try parsing different keywords.
                 </div>
             {% endfor %}
         </div>
         
-        <!-- Sidebar Column -->
         <div class="col-md-4">
             {% include "blog/partials/_sidebar.html" %}
         </div>

@@ -1,0 +1,55 @@
+<!-- Reusable Sidebar Component -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-dark text-white">Recent Posts</div>
+    <ul class="list-group list-group-flush">
+        {% for post in recent_posts %}
+            <li class="list-group-item">
+                <a href="{% url 'blog:post_detail' post.slug %}" class="text-decoration-none text-dark fw-bold">{{ post.title }}</a>
+                <br><small class="text-muted">By {{ post.author.username }} on {{ post.published_date|date:"M d, Y" }}</small>
+            </li>
+        {% empty %}
+            <li class="list-group-item text-muted">No recent posts found.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-dark text-white">Popular Posts</div>
+    <ul class="list-group list-group-flush">
+        {% for post in popular_posts %}
+            <li class="list-group-item">
+                <a href="{% url 'blog:post_detail' post.slug %}" class="text-decoration-none text-dark fw-bold">{{ post.title }}</a>
+                <br><small class="text-muted">{{ post.views }} views</small>
+            </li>
+        {% empty %}
+            <li class="list-group-item text-muted">No popular posts found.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-dark text-white">Categories</div>
+    <ul class="list-group list-group-flush">
+        {% for cat in sidebar_categories %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{% url 'blog:category_detail' cat.slug %}" class="text-decoration-none text-dark">{{ cat.name }}</a>
+                <span class="badge bg-secondary rounded-pill">{{ cat.post_count }}</span>
+            </li>
+        {% empty %}
+            <li class="list-group-item text-muted">No categories available.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-dark text-white">Popular Tags</div>
+    <div class="card-body">
+        {% for tag in sidebar_tags %}
+            <a href="{% url 'blog:tag_detail' tag.slug %}" class="badge bg-light text-dark border text-decoration-none mb-1 p-2">
+                #{{ tag.name }} <span class="text-muted">({{ tag.post_count }})</span>
+            </a>
+        {% empty %}
+            <span class="text-muted">No tags available.</span>
+        {% endfor %}
+    </div>
+</div>
