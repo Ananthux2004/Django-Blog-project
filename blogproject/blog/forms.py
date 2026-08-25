@@ -1,6 +1,6 @@
 from django import forms
 # Added Comment to the import below
-from .models import Post, Comment
+from .models import Post, Comment, Author
 
 
 class PostForm(forms.ModelForm):
@@ -55,3 +55,47 @@ class CommentForm(forms.ModelForm):
         if content:
             return content.strip()
         return content
+class AuthorProfileForm(forms.ModelForm):
+    class Meta:
+        model = Author
+        fields = [
+            'profile_picture',
+            'bio',
+            'location',
+            'website',
+            'github',
+            'linkedin',
+            'twitter',
+        ]
+        widgets = {
+            'profile_picture': forms.FileInput(attrs={
+                'class': 'form-control',
+                'id': 'profile-picture-input',
+                'accept': 'image/*',
+            }),
+            'bio': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Tell readers about yourself...',
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. San Francisco, CA',
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://yourwebsite.com',
+            }),
+            'github': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://github.com/username',
+            }),
+            'linkedin': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://linkedin.com/in/username',
+            }),
+            'twitter': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://x.com/username',
+            }),
+        }

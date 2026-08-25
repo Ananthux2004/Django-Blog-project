@@ -1,0 +1,249 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'blog/css/profile.css' %}">
+<style>
+    /* Scoped UI Polish Enhancements */
+    .avatar-upload-card {
+        background: linear-gradient(180deg, var(--bs-primary-bg-subtle, #f0f7ff) 0%, #ffffff 100%);
+    }
+
+    .avatar-preview-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+    }
+
+    .profile-avatar-img {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border: 4px solid #ffffff;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.25s ease-in-out;
+    }
+
+    .profile-avatar-img:hover {
+        transform: scale(1.02);
+    }
+
+    .section-icon-badge {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+
+    .input-icon-group {
+        position: relative;
+    }
+
+    .card-hover-shadow {
+        transition: box-shadow 0.25s ease-in-out;
+    }
+
+    .card-hover-shadow:hover {
+        box-shadow: 0 12px 24px -5px rgba(0, 0, 0, 0.06) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4 py-md-5">
+
+    <!-- Header Banner -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-3">
+                <div class="section-icon-badge bg-primary text-white fs-4 shadow-sm">
+                    <i class="bi bi-person-gear"></i>
+                </div>
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">Edit Profile</h1>
+                    <p class="text-muted mb-0 small">Update your public presence, bio, avatar, and social handles.</p>
+                </div>
+            </div>
+            <hr class="my-4 opacity-10">
+        </div>
+    </div>
+
+    <!-- Edit Profile Form -->
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <div class="row g-4">
+            
+            <!-- Left Column: Profile Picture Card -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 rounded-4 card-hover-shadow h-100 avatar-upload-card">
+                    <div class="card-body p-4 text-center d-flex flex-column align-items-center">
+                        
+                        <div class="w-100 text-start mb-3 border-bottom pb-2">
+                            <h5 class="card-title fw-bold text-dark mb-0 fs-6">
+                                <i class="bi bi-image text-primary me-2"></i>Profile Picture
+                            </h5>
+                        </div>
+
+                        <!-- Avatar Preview Wrapper -->
+                        <div class="avatar-wrapper my-3">
+                            <div class="avatar-preview-container mx-auto">
+                                {% if form.instance.profile_picture %}
+                                    <img id="avatar-preview" src="{{ form.instance.profile_picture.url }}" alt="Profile Picture" class="rounded-circle profile-avatar profile-avatar-img">
+                                {% else %}
+                                    <img id="avatar-preview" src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&size=200&background=0d6efd&color=fff" alt="Default Avatar" class="rounded-circle profile-avatar profile-avatar-img">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Upload Input Control -->
+                        <div class="w-100 mt-2 text-start">
+                            <label for="{{ form.profile_picture.id_for_label }}" class="form-label fw-semibold text-dark small mb-2">
+                                Choose New Image
+                            </label>
+                            
+                            <div class="input-group input-group-sm mb-2">
+                                {{ form.profile_picture }}
+                            </div>
+
+                            {% if form.profile_picture.errors %}
+                                <div class="invalid-feedback d-block small mt-1">
+                                    <i class="bi bi-exclamation-circle me-1"></i>{{ form.profile_picture.errors|striptags }}
+                                </div>
+                            {% endif %}
+                            
+                            <small class="form-text text-muted d-block mt-2">
+                                <i class="bi bi-info-circle me-1"></i>JPG, PNG, or GIF. Square images work best.
+                            </small>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Personal & Social Details -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 rounded-4 card-hover-shadow">
+                    <div class="card-body p-4">
+                        
+                        <!-- Personal Info Header -->
+                        <div class="d-flex align-items-center gap-2 mb-4 border-bottom pb-2">
+                            <div class="section-icon-badge bg-primary-subtle text-primary">
+                                <i class="bi bi-card-heading"></i>
+                            </div>
+                            <h5 class="card-title fw-bold text-dark mb-0 fs-6">Personal Details</h5>
+                        </div>
+
+                        <!-- Bio Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.bio.id_for_label }}" class="form-label fw-semibold text-dark small">Bio</label>
+                            {{ form.bio }}
+                            {% if form.bio.errors %}
+                                <div class="invalid-feedback d-block small mt-1">
+                                    <i class="bi bi-exclamation-circle me-1"></i>{{ form.bio.errors|striptags }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted small">Write a brief introduction about yourself or your articles.</small>
+                        </div>
+
+                        <!-- Location Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.location.id_for_label }}" class="form-label fw-semibold text-dark small">
+                                <i class="bi bi-geo-alt me-1 text-secondary"></i>Location
+                            </label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <div class="invalid-feedback d-block small mt-1">
+                                    <i class="bi bi-exclamation-circle me-1"></i>{{ form.location.errors|striptags }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Social Handles Header -->
+                        <div class="d-flex align-items-center gap-2 my-4 border-bottom pb-2 pt-2">
+                            <div class="section-icon-badge bg-info-subtle text-info-emphasis">
+                                <i class="bi bi-share"></i>
+                            </div>
+                            <h5 class="card-title fw-bold text-dark mb-0 fs-6">Social Links</h5>
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Website -->
+                            <div class="col-md-6 mb-2">
+                                <label for="{{ form.website.id_for_label }}" class="form-label fw-semibold text-dark small">
+                                    <i class="bi bi-globe me-1 text-primary"></i>Website
+                                </label>
+                                {{ form.website }}
+                                {% if form.website.errors %}
+                                    <div class="invalid-feedback d-block small mt-1">
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ form.website.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- GitHub -->
+                            <div class="col-md-6 mb-2">
+                                <label for="{{ form.github.id_for_label }}" class="form-label fw-semibold text-dark small">
+                                    <i class="bi bi-github me-1 text-dark"></i>GitHub
+                                </label>
+                                {{ form.github }}
+                                {% if form.github.errors %}
+                                    <div class="invalid-feedback d-block small mt-1">
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ form.github.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- LinkedIn -->
+                            <div class="col-md-6 mb-2">
+                                <label for="{{ form.linkedin.id_for_label }}" class="form-label fw-semibold text-dark small">
+                                    <i class="bi bi-linkedin me-1 text-primary"></i>LinkedIn
+                                </label>
+                                {{ form.linkedin }}
+                                {% if form.linkedin.errors %}
+                                    <div class="invalid-feedback d-block small mt-1">
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ form.linkedin.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Twitter / X -->
+                            <div class="col-md-6 mb-2">
+                                <label for="{{ form.twitter.id_for_label }}" class="form-label fw-semibold text-dark small">
+                                    <i class="bi bi-twitter-x me-1 text-dark"></i>Twitter / X
+                                </label>
+                                {{ form.twitter }}
+                                {% if form.twitter.errors %}
+                                    <div class="invalid-feedback d-block small mt-1">
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ form.twitter.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Action Controls -->
+                        <div class="d-flex gap-2 justify-content-end align-items-center pt-4 mt-4 border-top">
+                            <a href="{% if form.instance.pk and form.instance.get_absolute_url %}{{ form.instance.get_absolute_url }}{% else %}{% url 'blog:author_detail' username=user.username %}{% endif %}" class="btn btn-light rounded-pill px-4 text-secondary fw-medium">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold">
+                                <i class="bi bi-check-lg me-1"></i>Save Changes
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'blog/js/profile.js' %}"></script>
+{% endblock %}

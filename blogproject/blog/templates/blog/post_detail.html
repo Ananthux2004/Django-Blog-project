@@ -12,8 +12,42 @@
             </nav>
             
             <h1 class="display-4 mb-3">{{ post.title }}</h1>
-            <div class="text-muted mb-4">
-                By <strong>{{ post.author.username }}</strong> | Published on {{ post.published_date|date:"F j, Y" }} | <span>{{ post.reading_time }} min read</span>
+            
+            <!-- Article Meta & Bookmark Action Row -->
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 text-muted mb-4 pb-3 border-bottom">
+                <div>
+                    By <strong><span>👤 <a href="{% url 'blog:author_detail' post.author.user.username %}" class="text-decoration-none text-secondary fw-semibold">@{{ post.author.username }}</a></span></strong> 
+                    | Published on {{ post.published_date|date:"F j, Y" }} 
+                    | <span>{{ post.reading_time }} min read</span>
+                </div>
+
+                <!-- Bookmark / Save Post Button -->
+                <div>
+                    {% if user.is_authenticated %}
+                        <form method="POST" action="{% url 'blog:toggle_bookmark' slug=post.slug %}" class="d-inline">
+                            {% csrf_token %}
+                            {% if is_bookmarked or post.slug in user_bookmarked_slugs %}
+                                <button type="submit" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm" title="Remove from Saved Posts">
+                                    <i class="bi bi-bookmark-fill"></i>
+                                    <span>Saved</span>
+                                    <span class="badge bg-white text-primary ms-1">{{ post.bookmarks.count }}</span>
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm" title="Save Post">
+                                    <i class="bi bi-bookmark"></i>
+                                    <span>Save</span>
+                                    <span class="badge bg-primary text-white ms-1">{{ post.bookmarks.count }}</span>
+                                </button>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" title="Log in to save this post">
+                            <i class="bi bi-bookmark"></i>
+                            <span>Save</span>
+                            <span class="badge bg-secondary text-white ms-1">{{ post.bookmarks.count }}</span>
+                        </a>
+                    {% endif %}
+                </div>
             </div>
             
             {% if post.featured_image %}

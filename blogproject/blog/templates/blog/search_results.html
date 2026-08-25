@@ -26,7 +26,7 @@
                         <h2 class="card-title h4">{{ post.title }}</h2>
                         <p class="card-text text-muted">{{ post.excerpt }}</p>
                         <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">By {{ post.author.username }} on {{ post.published_date|date:"M d, Y" }}</small>
+                            <small class="text-muted">By <span>👤 <a href="{% url 'blog:author_detail' post.author.user.username %}" class="text-decoration-none text-secondary fw-semibold">@{{ post.author.username }}</a></span> on {{ post.published_date|date:"M d, Y" }}</small>
                             <a href="{% url 'blog:post_detail' post.slug %}" class="btn btn-sm btn-outline-primary">Read More</a>
                         </div>
                     </div>

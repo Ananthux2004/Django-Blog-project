@@ -1,55 +1,101 @@
-<!-- Reusable Sidebar Component -->
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-dark text-white">Recent Posts</div>
-    <ul class="list-group list-group-flush">
+<!-- Reusable Modern Sidebar Component -->
+<aside class="sidebar-wrapper">
+
+  <!-- 1. RECENT POSTS WIDGET -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4 sidebar-widget bg-white">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <i class="bi bi-clock-history text-purple fs-5"></i>
+        <h5 class="fw-bold text-dark m-0 fs-6">Recent Posts</h5>
+      </div>
+      
+      <div class="sidebar-post-list d-flex flex-column gap-3">
         {% for post in recent_posts %}
-            <li class="list-group-item">
-                <a href="{% url 'blog:post_detail' post.slug %}" class="text-decoration-none text-dark fw-bold">{{ post.title }}</a>
-                <br><small class="text-muted">By {{ post.author.username }} on {{ post.published_date|date:"M d, Y" }}</small>
-            </li>
-        {% empty %}
-            <li class="list-group-item text-muted">No recent posts found.</li>
-        {% endfor %}
-    </ul>
-</div>
-
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-dark text-white">Popular Posts</div>
-    <ul class="list-group list-group-flush">
-        {% for post in popular_posts %}
-            <li class="list-group-item">
-                <a href="{% url 'blog:post_detail' post.slug %}" class="text-decoration-none text-dark fw-bold">{{ post.title }}</a>
-                <br><small class="text-muted">{{ post.views }} views</small>
-            </li>
-        {% empty %}
-            <li class="list-group-item text-muted">No popular posts found.</li>
-        {% endfor %}
-    </ul>
-</div>
-
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-dark text-white">Categories</div>
-    <ul class="list-group list-group-flush">
-        {% for cat in sidebar_categories %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <a href="{% url 'blog:category_detail' cat.slug %}" class="text-decoration-none text-dark">{{ cat.name }}</a>
-                <span class="badge bg-secondary rounded-pill">{{ cat.post_count }}</span>
-            </li>
-        {% empty %}
-            <li class="list-group-item text-muted">No categories available.</li>
-        {% endfor %}
-    </ul>
-</div>
-
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-dark text-white">Popular Tags</div>
-    <div class="card-body">
-        {% for tag in sidebar_tags %}
-            <a href="{% url 'blog:tag_detail' tag.slug %}" class="badge bg-light text-dark border text-decoration-none mb-1 p-2">
-                #{{ tag.name }} <span class="text-muted">({{ tag.post_count }})</span>
+          <div class="sidebar-post-item">
+            <a href="{% url 'blog:post_detail' post.slug %}" class="sidebar-post-title fw-semibold text-dark text-decoration-none">
+              {{ post.title }}
             </a>
+            <div class="d-flex align-items-center gap-2 text-muted mt-1 fs-8">
+              <span>By {{ post.author.user.get_full_name|default:post.author.user.username|default:post.author }}</span>
+              <span>•</span>
+              <span>{{ post.published_date|date:"M d, Y" }}</span>
+            </div>
+          </div>
         {% empty %}
-            <span class="text-muted">No tags available.</span>
+          <p class="text-muted small m-0">No recent posts found.</p>
         {% endfor %}
+      </div>
     </div>
-</div>
+  </div>
+
+  <!-- 2. POPULAR POSTS WIDGET -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4 sidebar-widget bg-white">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <i class="bi bi-fire text-orange fs-5"></i>
+        <h5 class="fw-bold text-dark m-0 fs-6">Popular Posts</h5>
+      </div>
+
+      <div class="sidebar-post-list d-flex flex-column gap-3">
+        {% for post in popular_posts %}
+          <div class="sidebar-post-item">
+            <a href="{% url 'blog:post_detail' post.slug %}" class="sidebar-post-title fw-semibold text-dark text-decoration-none">
+              {{ post.title }}
+            </a>
+            <div class="d-flex align-items-center gap-1 text-muted mt-1 fs-8">
+              <i class="bi bi-eye"></i>
+              <!-- Fixed: Removed views_count lookup -->
+              <span>{{ post.views|default:"0" }} views</span>
+            </div>
+          </div>
+        {% empty %}
+          <p class="text-muted small m-0">No popular posts found.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. CATEGORIES WIDGET -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4 sidebar-widget bg-white">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <i class="bi bi-folder2-open text-purple fs-5"></i>
+        <h5 class="fw-bold text-dark m-0 fs-6">Categories</h5>
+      </div>
+
+      <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+        {% for cat in sidebar_categories %}
+          <li>
+            <a href="{% url 'blog:category_detail' cat.slug %}" class="category-list-link d-flex justify-content-between align-items-center p-2 rounded-2 text-decoration-none">
+              <span class="text-dark fw-medium small">{{ cat.name }}</span>
+              <span class="badge category-pill">{{ cat.post_count }}</span>
+            </a>
+          </li>
+        {% empty %}
+          <li class="text-muted small">No categories available.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- 4. POPULAR TAGS WIDGET -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4 sidebar-widget bg-white">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <i class="bi bi-tags text-purple fs-5"></i>
+        <h5 class="fw-bold text-dark m-0 fs-6">Popular Tags</h5>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2">
+        {% for tag in sidebar_tags %}
+          <a href="{% url 'blog:tag_detail' tag.slug %}" class="pill text-decoration-none">
+            #{{ tag.name }} <span class="opacity-75">({{ tag.post_count }})</span>
+          </a>
+        {% empty %}
+          <span class="text-muted small">No tags available.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</aside>

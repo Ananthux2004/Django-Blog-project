@@ -33,4 +33,5 @@ urlpatterns = [
         views.password_reset_complete,
         name="password_reset_complete",
     ),
+    path('settings/', views.AccountSettingsView.as_view(), name='settings'),
 ]

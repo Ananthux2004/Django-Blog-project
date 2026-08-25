@@ -10,18 +10,23 @@
     <div class="auth-card shadow-lg">
         <h2>Signup</h2>
         
-        <form method="POST">
+        <form method="POST" novalidate>
             {% csrf_token %}
             
+            <!-- Global Form Error Alert Box -->
             {% if form.errors %}
                 <div class="alert alert-danger py-2 small">
                     Please fix the issues highlighted below.
                 </div>
             {% endif %}
 
+            <!-- Dynamic Field Layout Loop -->
             {% for field in form %}
                 <div class="auth-form-group {% if 'password' in field.name %}password-field-wrapper{% endif %}">
+                    <!-- Target input field rendering -->
                     {{ field }}
+                    
+                    <!-- Interactive Password Visibility Toggle -->
                     {% if 'password' in field.name %}
                         <button type="button" class="password-toggle-icon" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)" aria-label="Toggle password visibility">
                             <!-- 2D Eye Open Icon -->
@@ -29,6 +34,13 @@
                             <!-- 2D Eye Slashed Icon -->
                             <svg class="eye-closed d-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                         </button>
+                    {% endif %}
+
+                    <!-- Explicit Field Validation Error Banner (Reveals Hidden Database Rejections) -->
+                    {% if field.errors %}
+                        <div class="text-danger small mt-1 text-start fw-medium" style="font-size: 0.85rem; padding-left: 2px;">
+                            ⚠️ {{ field.errors|striptags }}
+                        </div>
                     {% endif %}
                 </div>
             {% endfor %}
@@ -42,6 +54,7 @@
 
         <div class="auth-divider">Or</div>
 
+        <!-- Social Single Sign-On Access Points -->
         <a href="#" class="btn-social btn-facebook">
             <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/></svg>
             Login with Facebook
@@ -52,7 +65,17 @@
         </a>
     </div>
 </div>
+
 {% block extra_js %}
 <script src="{% static 'blog/js/auth.js' %}"></script>
+<script>
+    // Client-side fix for the duplicate placeholder text
+    document.addEventListener("DOMContentLoaded", function() {
+        const usernameInput = document.querySelector('input[name="username"]');
+        if (usernameInput) {
+            usernameInput.placeholder = "Username";
+        }
+    });
+</script>
 {% endblock extra_js %}
 {% endblock %}
