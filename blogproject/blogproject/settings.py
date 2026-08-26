@@ -115,7 +115,7 @@ STORAGES = {
 }
 
 # Legacy setting required by django-cloudinary-storage
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 # Disable strict manifest lookup
 WHITENOISE_MANIFEST_STRICT = False
