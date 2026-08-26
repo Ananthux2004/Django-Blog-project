@@ -1,0 +1,324 @@
+{% extends "blog/base.html" %}
+
+{% block title %}{{ author.user.get_full_name|default:author.user.username }} - Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Profile UI Polish Styles */
+    .profile-cover {
+        height: 160px;
+        background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 50%, #3b82f6 100%);
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        margin-top: -65px;
+        display: inline-block;
+    }
+
+    .avatar-img {
+        width: 130px;
+        height: 130px;
+        object-fit: cover;
+        border: 4px solid #ffffff;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+
+    .avatar-placeholder {
+        width: 130px;
+        height: 130px;
+        border: 4px solid #ffffff;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .hover-lift {
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .stat-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .social-btn {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .social-btn:hover {
+        transform: scale(1.1);
+        background-color: var(--bs-primary);
+        color: #ffffff !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4 my-md-5">
+
+    <!-- Hero Profile Header Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <!-- Cover Banner -->
+        <div class="profile-cover"></div>
+
+        <!-- Profile Details Header -->
+        <div class="card-body p-4 pt-0">
+            <div class="row align-items-end g-3 text-center text-md-start">
+                
+                <!-- Avatar -->
+                <div class="col-12 col-md-auto text-center">
+                    <div class="avatar-wrapper">
+                        {% if author.profile_picture %}
+                            <img src="{{ author.profile_picture.url }}" alt="{{ author.user.username }}" class="rounded-circle avatar-img">
+                        {% else %}
+                            <div class="rounded-circle avatar-placeholder text-white d-flex align-items-center justify-content-center fs-1 fw-bold">
+                                {{ author.user.username|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Identity & Bio -->
+                <div class="col-12 col-md">
+                    <div class="d-flex flex-column flex-md-row align-items-center align-items-md-baseline gap-2 mb-2">
+                        <h2 class="fw-bold text-dark mb-0 fs-3">{{ author.user.get_full_name|default:author.user.username }}</h2>
+                        <span class="text-muted fw-medium fs-6">@{{ author.user.username }}</span>
+                        
+                        {% if is_owner %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">You</span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-secondary mb-3 max-w-2xl lh-base fs-6">
+                        {{ author.bio|default:"No bio added yet. Check back later for updates!" }}
+                    </p>
+
+                    <!-- Links & Actions -->
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2 flex-wrap">
+                        {% if author.website %}
+                            <a href="{{ author.website }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                <i class="bi bi-globe me-1"></i> Website
+                            </a>
+                        {% endif %}
+
+                        {% if author.twitter %}
+                            <a href="{{ author.twitter }}" target="_blank" rel="noopener noreferrer" class="social-btn bg-body-tertiary text-secondary text-decoration-none" title="Twitter / X">
+                                <i class="bi bi-twitter-x"></i>
+                            </a>
+                        {% endif %}
+
+                        {% if author.github %}
+                            <a href="{{ author.github }}" target="_blank" rel="noopener noreferrer" class="social-btn bg-body-tertiary text-secondary text-decoration-none" title="GitHub">
+                                <i class="bi bi-github"></i>
+                            </a>
+                        {% endif %}
+
+                        {% if author.linkedin %}
+                            <a href="{{ author.linkedin }}" target="_blank" rel="noopener noreferrer" class="social-btn bg-body-tertiary text-secondary text-decoration-none" title="LinkedIn">
+                                <i class="bi bi-linkedin"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Owner Action Button -->
+                {% if is_owner %}
+                <div class="col-12 col-md-auto ms-md-auto text-center text-md-end mt-3 mt-md-0">
+                    <a href="{% url 'blog:profile_edit' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-medium">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Profile
+                    </a>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Statistics Grid -->
+    <div class="row g-3 mb-5">
+        <!-- Published Posts -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 hover-lift h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon-wrapper bg-primary-subtle text-primary fs-4">
+                        <i class="bi bi-journal-text"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0 text-dark">{{ published_count }}</h3>
+                        <span class="text-muted small fw-medium">Published</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Draft Posts (Owner Only) -->
+        {% if is_owner %}
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 hover-lift h-100 bg-warning-subtle border-warning-subtle">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon-wrapper bg-warning text-dark fs-4">
+                        <i class="bi bi-file-earmark-lock"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0 text-dark">{{ draft_count }}</h3>
+                        <span class="text-dark-emphasis small fw-medium">Drafts</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Total Views -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 hover-lift h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon-wrapper bg-info-subtle text-info-emphasis fs-4">
+                        <i class="bi bi-eye"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0 text-dark">{{ total_views }}</h3>
+                        <span class="text-muted small fw-medium">Total Views</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Comments -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 hover-lift h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon-wrapper bg-success-subtle text-success fs-4">
+                        <i class="bi bi-chat-left-text"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0 text-dark">{{ total_comments }}</h3>
+                        <span class="text-muted small fw-medium">Comments</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Articles Section -->
+    {% if featured_posts %}
+    <section class="mb-5">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="bg-warning-subtle text-warning-emphasis p-2 rounded-3 d-inline-flex align-items-center justify-content-center">
+                <i class="bi bi-star-fill fs-5"></i>
+            </span>
+            <h4 class="fw-bold text-dark mb-0">Featured Articles</h4>
+        </div>
+        <div class="row g-4">
+            {% for post in featured_posts %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="h-100 hover-lift">
+                        {% include "blog/components/post_card.html" with post=post %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Recent Posts Section -->
+    <section>
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center gap-2">
+                <span class="bg-primary-subtle text-primary p-2 rounded-3 d-inline-flex align-items-center justify-content-center">
+                    <i class="bi bi-clock-history fs-5"></i>
+                </span>
+                <h4 class="fw-bold text-dark mb-0">Recent Articles</h4>
+            </div>
+            
+            {% if page_obj.paginator.num_pages > 1 %}
+                <span class="badge bg-body-tertiary text-secondary border rounded-pill px-3 py-2 fw-medium">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+            {% endif %}
+        </div>
+
+        {% if page_obj %}
+            <div class="row g-4 mb-4">
+                {% for post in page_obj %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="h-100 hover-lift">
+                            {% include "blog/components/post_card.html" with post=post %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Polished Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Author pagination" class="mt-5">
+                <ul class="pagination pagination-md justify-content-center gap-1 border-0 mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link rounded-3 border-0 shadow-sm px-3" href="?page={{ page_obj.previous_page_number }}">
+                                <i class="bi bi-chevron-left me-1"></i> Previous
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link rounded-3 border-0 px-3"><i class="bi bi-chevron-left me-1"></i> Previous</span>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link rounded-3 border-0 shadow-sm fw-bold px-3">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link rounded-3 border-0 shadow-sm px-3 text-dark" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link rounded-3 border-0 shadow-sm px-3" href="?page={{ page_obj.next_page_number }}">
+                                Next <i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link rounded-3 border-0 px-3">Next <i class="bi bi-chevron-right ms-1"></i></span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- Polished Empty State -->
+            <div class="text-center py-5 bg-body-tertiary rounded-4 border border-dashed">
+                <div class="bg-white rounded-circle shadow-sm d-inline-flex p-4 mb-3">
+                    <i class="bi bi-journal-x text-secondary display-5"></i>
+                </div>
+                <h5 class="fw-bold text-dark">No Articles Found</h5>
+                <p class="text-muted mb-0">This author hasn't published any articles yet.</p>
+            </div>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock %}

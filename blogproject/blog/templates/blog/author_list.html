@@ -1,0 +1,49 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}DevBlog - Authors{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4 pb-2 border-bottom fw-bold">Our Editorial Authors</h1>
+    
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for author in authors %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 text-center p-4">
+                    <div class="mb-3">
+                        {% if author.profile_picture %}
+                            <img src="{{ author.profile_picture.url }}" class="rounded-circle img-thumbnail" alt="Profile" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 100px; height: 100px; font-size: 2rem;">
+                                👤
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-0">
+                        <h3 class="h5 fw-bold text-dark mb-1">@{{ author.user.username }}</h3>
+                        <p class="text-muted small mb-3">✍️ {{ author.published_posts_count }} Published Post{{ author.published_posts_count|pluralize }}</p>
+                        
+                        <p class="card-text text-muted small px-2">
+                            {% if author.bio %}
+                                {{ author.bio|truncatewords:15 }}
+                            {% else %}
+                                <em class="text-black-50">No biographical details provided by this author.</em>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-3">
+                        <a href="{% url 'blog:author_detail' author.user.username %}" class="btn btn-sm btn-outline-primary w-100">View Profile</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info text-center" role="alert">
+                    No active authors found in the system.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

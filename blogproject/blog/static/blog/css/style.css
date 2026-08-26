@@ -1,0 +1,217 @@
+/* ==========================================================================
+   Global & Layout Styles
+   ========================================================================== */
+body {
+  background-color: #f4f5f7;
+  color: #1e293b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* ==========================================================================
+   Custom Dark Header & Navigation Bar
+   ========================================================================== */
+.custom-navbar {
+  background-color: #181d27;
+  border-bottom: 1px solid #2d3748;
+  padding: 0.8rem 0;
+}
+
+.brand-logo {
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.brand-accent {
+  color: #6366f1;
+}
+
+.custom-nav-link {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  padding: 0.5rem 0.8rem;
+  transition: color 0.2s ease;
+}
+
+.custom-nav-link:hover {
+  color: #ffffff;
+}
+
+/* Unified Auth Link Styles (Login & Signup match) */
+.auth-nav-link {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  padding: 0.4rem 0.6rem;
+  background: transparent;
+  border: none;
+  transition: color 0.2s ease;
+}
+
+.auth-nav-link:hover {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Expandable Search Bar (Uiverse.io Widget)
+   ========================================================================== */
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  min-width: 42px;
+  height: 42px;
+}
+
+.input-wrapper .input {
+  border-style: none;
+  height: 42px;
+  width: 42px;
+  padding: 10px 40px 10px 12px;
+  outline: none;
+  border-radius: 50%;
+  transition: all 0.4s ease-in-out;
+  background-color: #1557c0;
+  box-shadow: 0px 0px 6px rgba(21, 87, 192, 0.4);
+  color: #ffffff;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.input-wrapper .input::placeholder {
+  font-family: inherit;
+  font-size: 14px;
+  color: #94a3b8;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.input-wrapper .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 0px;
+  cursor: pointer;
+  width: 42px;
+  height: 42px;
+  outline: none;
+  border-style: none;
+  border-radius: 50%;
+  pointer-events: none;
+  background-color: transparent;
+  z-index: 10;
+}
+
+/* Focused / Expanded Search State */
+.input-wrapper .input:focus,
+.input-wrapper .icon:focus ~ .input {
+  width: 220px;
+  border-radius: 0px;
+  background-color: transparent;
+  border-bottom: 2px solid #1557c0;
+  box-shadow: none;
+  padding-left: 5px;
+  cursor: text;
+}
+
+.input-wrapper .input:focus::placeholder {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   GridPane-Style Blog Card Grid
+   ========================================================================== */
+.gridpane-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.gridpane-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+}
+
+.gridpane-card-img-wrapper {
+  width: 100%;
+  height: 220px;
+  background-color: #0d1117;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.gridpane-card-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.gridpane-card:hover .gridpane-card-img-wrapper img {
+  transform: scale(1.03);
+}
+
+.fallback-header-title {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.4rem;
+  text-align: center;
+  padding: 1.5rem;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.gridpane-card-body {
+  padding: 2rem 1.5rem 1rem 1.5rem;
+  text-align: center;
+}
+
+.gridpane-card-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.4;
+  margin: 0;
+  text-decoration: none;
+}
+
+.gridpane-card-title a {
+  color: #1e293b;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.gridpane-card-title a:hover {
+  color: #1557c0;
+}
+
+.gridpane-card-footer {
+  padding-bottom: 2rem;
+  text-align: center;
+}
+
+.gridpane-card-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: capitalize;
+}

@@ -1,14 +1,15 @@
 {% load static %}
-<nav
-  class="navbar navbar-expand-lg navbar-light bg-light border-bottom sticky-top"
->
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="/blog/">
-      <span>DevBlog</span>
-    </a>
+<!-- Link Custom Isolated SaaS Navbar Stylesheet -->
+<link rel="stylesheet" href="{% static 'blog/css/navbar.css' %}" />
 
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark custom-navbar">
+  <div class="container">
+    <!-- Brand Logo -->
+    <a class="navbar-brand fw-bold" href="/">DevBlog</a>
+
+    <!-- Mobile Hamburger Toggle Menu -->
     <button
-      class="navbar-toggler"
+      class="navbar-toggler border-0 shadow-none"
       type="button"
       data-bs-toggle="collapse"
       data-bs-target="#navbarNav"
@@ -19,86 +20,202 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
+    <!-- Collapsible Navigation Wrap Holder -->
     <div class="collapse navbar-collapse" id="navbarNav">
-      <form class="d-flex ms-lg-auto me-lg-3 mt-3 mt-lg-0" role="search">
-        <input
-          class="form-control me-2"
-          type="search"
-          placeholder="Search posts, categories, authors..."
-          aria-label="Search"
-        />
+      <!-- Left Side Navigation Elements -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'blog:post_list' %}">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'blog:category_list' %}"
+            >Categories</a
+          >
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'blog:tag_list' %}">Tags</a>
+        </li>
+      </ul>
+
+      <form
+        class="d-flex align-items-center"
+        action="{% url 'blog:search' %}"
+        method="get"
+      >
+        <div class="input-group">
+          <input
+            type="search"
+            name="q"
+            class="form-control form-control-sm bg-light border-secondary-subtle"
+            placeholder="Search blog..."
+            value="{{ request.GET.q|default:'' }}"
+            aria-label="Search blog"
+            required
+          />
+          <button
+            class="btn btn-purple-primary btn-sm px-3"
+            type="submit"
+            aria-label="Submit search"
+          >
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
       </form>
 
-      <ul class="navbar-nav ms-lg-2">
-        <li class="nav-item">
-          <a class="nav-link" href="/blog/">Home</a>
-        </li>
-
-        <li class="nav-item dropdown">
+      <!-- Right Side: Auth State Dynamic Controls Wrapper -->
+      <ul class="navbar-nav mb-2 mb-lg-0 align-items-center">
+        {% if user.is_authenticated %}
+        <!-- DISPLAY DROPDOWN IF LOGGED IN -->
+        <li class="nav-item dropdown ms-lg-2 position-relative">
           <a
-            class="nav-link dropdown-toggle"
+            class="nav-link dropdown-toggle d-flex align-items-center p-0 custom-profile-toggle text-light"
             href="#"
+            id="userProfileDropdown"
             role="button"
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
-            Categories
+            <span class="me-2 small fw-medium d-inline-block text-nowrap">
+              {{ user.first_name|default:user.username }}
+            </span>
+            <div class="avatar-nav-wrapper">
+              {% if user.author.profile_picture %}
+              <img
+                src="{{ user.author.profile_picture.url }}"
+                class="rounded-circle profile-avatar-nav"
+                alt="{{ user.username }}"
+              />
+              {% else %}
+              <i class="bi bi-person-circle fs-4 text-light"></i>
+              {% endif %}
+            </div>
           </a>
-          <ul class="dropdown-menu">
+
+          <!-- Dropdown Interactive Flyout Card Surface -->
+          <ul
+            class="dropdown-menu dropdown-menu-end shadow border-0 modern-nav-dropdown animate fade-in"
+            aria-labelledby="userProfileDropdown"
+          >
             <li>
-              <a class="dropdown-item" href="#">#tech</a>
+              <a
+                class="dropdown-header-profile p-3 d-flex align-items-center bg-light rounded-top-3 text-decoration-none"
+                href="{% url 'blog:author_detail' user.username %}"
+              >
+                <div class="me-3 position-relative">
+                  {% if user.author.profile_picture %}
+                  <img
+                    src="{{ user.author.profile_picture.url }}"
+                    class="rounded-circle profile-avatar-dropdown"
+                    alt="{{ user.username }}"
+                  />
+                  {% else %}
+                  <i class="bi bi-person-circle fs-2 text-secondary"></i>
+                  {% endif %}
+                </div>
+                <div class="overflow-hidden">
+                  <h6 class="mb-0 text-dark fw-bold text-truncate">
+                    {% if user.get_full_name %}{{ user.get_full_name }}{% else
+                    %}{{ user.username }}{% endif %}
+                  </h6>
+                  <small class="text-muted d-block mt-0.5">Member</small>
+                </div>
+              </a>
+            </li>
+
+            <li><hr class="dropdown-divider my-1 text-black-50" /></li>
+
+            <li>
+              <a
+                class="dropdown-item py-2 d-flex align-items-center gap-2"
+                href="{% url 'blog:profile_edit' %}"
+              >
+                <i class="bi bi-person text-muted fs-5"></i>
+                <span>Edit Profile</span>
+              </a>
+            </li>
+
+            <li>
+              <a
+                class="dropdown-item py-2 d-flex align-items-center justify-content-between gap-2"
+                href="#"
+              >
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-bell text-muted fs-5"></i>
+                  <span>Notifications</span>
+                </div>
+                {% if unread_notifications_count %}
+                <span class="badge bg-danger rounded-pill"
+                  >{{ unread_notifications_count }}</span
+                >
+                {% endif %}
+              </a>
+            </li>
+
+            <li>
+              <a
+                class="dropdown-item py-2 d-flex align-items-center gap-2"
+                href="{% url 'blog:author_detail' user.username %}"
+              >
+                <i class="bi bi-file-earmark-text text-muted fs-5"></i>
+                <span>My Posts</span>
+              </a>
             </li>
             <li>
-              <a class="dropdown-item" href="#">#design</a>
+              <a
+                class="dropdown-item py-2 d-flex align-items-center gap-2"
+                href="{% url 'blog:saved_posts' %}"
+              >
+                <i class="bi bi-bookmark-heart text-muted fs-5"></i>
+                <span>Saved Posts</span>
+              </a>
             </li>
             <li>
-              <a class="dropdown-item" href="#">#ai</a>
+              <a
+                class="dropdown-item py-2 d-flex align-items-center gap-2"
+                href="{% url 'accounts:settings' %}"
+              >
+                <i class="bi bi-gear text-muted fs-5"></i>
+                <span>Settings</span>
+              </a>
             </li>
-            <li>
-              <a class="dropdown-item" href="#">#javascript</a>
+
+            <li><hr class="dropdown-divider my-1 text-black-50" /></li>
+
+            <li class="px-2 pb-1 pt-0.5">
+              <form
+                method="post"
+                action="{% url 'accounts:logout' %}"
+                class="m-0 p-0"
+              >
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="dropdown-item py-2 d-flex align-items-center gap-2 rounded text-danger fw-medium w-100 border-0 bg-transparent"
+                >
+                  <i class="bi bi-box-arrow-right fs-5"></i>
+                  <span>Logout</span>
+                </button>
+              </form>
             </li>
           </ul>
         </li>
-
-        <li class="nav-item">
-          <a class="nav-link" href="#">About</a>
-        </li>
-
-        {% if user.is_authenticated %}
-        <li class="nav-item">
-          <a class="nav-link fw-bold" href="#">{{ user.username }}</a>
-        </li>
-        <li class="nav-item">
-          <form
-            class="ms-lg-3"
-            method="post"
-            action="{% url 'accounts:logout' %}"
-          >
-            {% csrf_token %}
-            <button class="btn btn-outline-danger fw-bold" type="submit">
-              Logout
-            </button>
-          </form>
-        </li>
         {% else %}
+        <!-- UNIFIED LOGIN & SIGNUP LINKS -->
         <li class="nav-item">
-          <a
-            class="btn btn-primary fw-bold ms-lg-3 me-2"
-            href="{% url 'accounts:login' %}"
+          <a class="nav-link auth-nav-link" href="{% url 'accounts:login' %}"
+            >Login</a
           >
-            Login
-          </a>
         </li>
         <li class="nav-item">
-          <a
-            class="btn btn-success fw-bold"
-            href="{% url 'accounts:register' %}"
+          <a class="nav-link auth-nav-link" href="{% url 'accounts:register' %}"
+            >Signup</a
           >
-            Register
-          </a>
         </li>
         {% endif %}
       </ul>
     </div>
   </div>
 </nav>
+
+<!-- JavaScript Bootstrap Controller Event Hooks -->
+<script src="{% static 'blog/js/navbar.js' %}" defer></script>

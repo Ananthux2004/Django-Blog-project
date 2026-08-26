@@ -1,5 +1,6 @@
 from django.urls import path
 from django.views.generic import RedirectView
+from .views import AuthorProfileEditView
 
 from . import views
 
@@ -61,4 +62,19 @@ urlpatterns = [
         views.delete_comment,
         name="delete_comment",
     ),
+    path('search/', views.SearchResultsView.as_view(), name='search'),
+    path('categories/', views.CategoryListView.as_view(), name='category_list'),
+    path('category/<slug:slug>/', views.CategoryDetailView.as_view(), name='category_detail'),
+    path('tags/', views.TagListView.as_view(), name='tag_list'),
+    path('tag/<slug:slug>/', views.TagDetailView.as_view(), name='tag_detail'),
+    path("authors/", views.AuthorListView.as_view(), name="author_list"),
+    path("author/<str:username>/", views.AuthorDetailView.as_view(), name="author_detail"),
+    path('profile/edit/', AuthorProfileEditView.as_view(), name='profile_edit'),
+    path('my-posts/', views.MyPostsDashboardView.as_view(), name='my_posts'),
+    path('saved/', views.SavedPostsListView.as_view(), name='saved_posts'),
+    path('posts/<slug:slug>/bookmark/', views.BookmarkToggleView.as_view(), name='toggle_bookmark'),
+    path('author/<str:username>/', views.AuthorDetailView.as_view(), name='author_detail'),
+    
+    
+    
 ]
