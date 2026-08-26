@@ -152,9 +152,17 @@ class PostCreateView(SuccessMessageMixin, LoginRequiredMixin, CreateView):
     slug_field = "slug"
 
     def form_valid(self, form):
+        print("FILES IN REQUEST:", self.request.FILES)
         author, _ = Author.objects.get_or_create(user=self.request.user)
-        form.instance.author = author
-        return super().form_valid(form)
+        form.instance.author = author   
+        response = super().form_valid(form)
+
+        if self.object.featured_image:
+            print("SAVED IMAGE URL:", self.object.featured_image.url)
+            print("STORAGE BACKEND:", self.object.featured_image.storage)
+        else:
+            print("NO IMAGE WAS SAVED TO MODEL")
+        return response
 
     def get_success_url(self):
         return reverse_lazy("blog:post_detail", kwargs={"slug": self.object.slug})

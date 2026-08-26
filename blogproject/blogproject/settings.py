@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
@@ -106,7 +107,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",  # <-- Changed from FileSystemStorage
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
