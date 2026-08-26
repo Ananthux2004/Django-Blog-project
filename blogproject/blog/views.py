@@ -9,6 +9,7 @@ from django.urls import reverse_lazy
 from django.views.generic import View, CreateView, DeleteView, DetailView, ListView, UpdateView
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
+from django.core.cache import cache
 
 from .forms import PostForm, CommentForm, AuthorProfileForm
 from .models import Post, Comment, Category, Tag, Author, Bookmark
@@ -21,7 +22,7 @@ User = get_user_model()
 # ==========================================
 
 def home(request):
-    """Dynamic Homepage view passing post and sidebar context."""
+    """Dynamic Homepage view passing post and sidebar context with low-level caching."""
     if request.user.is_staff:
         posts_qs = Post.objects.all()
     else:
@@ -31,9 +32,18 @@ def home(request):
     posts = posts_qs.select_related('author__user', 'category').prefetch_related('tags')
     recent_qs = posts.order_by('-published_date')
 
+    # Caching latest posts query
+    latest_posts = cache.get('homepage_latest_posts')
+    if latest_posts is None:
+        latest_posts = list(recent_qs[:6])
+        cache.set('homepage_latest_posts', latest_posts, 60 * 15)
+        print("[CACHE MISS] Fetched latest posts from Database.")
+    else:
+        print("[CACHE HIT] Loaded latest posts directly from Cache.")
+
     context = {
         'posts': recent_qs,
-        'latest_posts': recent_qs[:6],
+        'latest_posts': latest_posts,
         'featured_post': recent_qs.first(),
         'recent_posts': recent_qs[:5],
         'popular_posts': posts.order_by('-views')[:5],
@@ -383,7 +393,7 @@ class AuthorListView(BlogSidebarMixin, ListView):
 
 class AuthorDetailView(BlogSidebarMixin, DetailView):
     """
-    Enhanced public author profile page (Phase 2.6.7) with statistics,
+    Enhanced public author profile page with statistics,
     owner-only draft counts, featured articles, and paginated recent posts.
     """
     model = Author

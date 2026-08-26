@@ -1,8 +1,9 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from .views import AuthorProfileEditView
+from rest_framework.authtoken.views import obtain_auth_token
 
-from . import views
+from . import views,api_views
 
 app_name = "blog"
 
@@ -74,7 +75,9 @@ urlpatterns = [
     path('saved/', views.SavedPostsListView.as_view(), name='saved_posts'),
     path('posts/<slug:slug>/bookmark/', views.BookmarkToggleView.as_view(), name='toggle_bookmark'),
     path('author/<str:username>/', views.AuthorDetailView.as_view(), name='author_detail'),
-    
+    path('api/v1/posts/', api_views.PostListCreateAPIView.as_view(), name='api_post_list'),
+    path('api/v1/posts/<slug:slug>/', api_views.PostDetailAPIView.as_view(), name='api_post_detail'),
+    path('api/v1/token-auth/', obtain_auth_token, name='api_token_auth'),
     
     
 ]
