@@ -79,14 +79,18 @@
               {{ user.first_name|default:user.username }}
             </span>
             <div class="avatar-nav-wrapper">
-              {% if user.author.profile_picture %}
+              {% if user.author %}
               <img
-                src="{{ user.author.profile_picture.url }}"
+                src="{{ user.author.get_avatar_url }}"
                 class="rounded-circle profile-avatar-nav"
                 alt="{{ user.username }}"
               />
               {% else %}
-              <i class="bi bi-person-circle fs-4 text-light"></i>
+              <img
+                src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D6EFD&color=fff"
+                class="rounded-circle profile-avatar-nav"
+                alt="{{ user.username }}"
+              />
               {% endif %}
             </div>
           </a>
@@ -102,20 +106,23 @@
                 href="{% url 'blog:author_detail' user.username %}"
               >
                 <div class="me-3 position-relative">
-                  {% if user.author.profile_picture %}
+                  {% if user.author %}
                   <img
-                    src="{{ user.author.profile_picture.url }}"
+                    src="{{ user.author.get_avatar_url }}"
                     class="rounded-circle profile-avatar-dropdown"
                     alt="{{ user.username }}"
                   />
                   {% else %}
-                  <i class="bi bi-person-circle fs-2 text-secondary"></i>
+                  <img
+                    src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D6EFD&color=fff"
+                    class="rounded-circle profile-avatar-dropdown"
+                    alt="{{ user.username }}"
+                  />
                   {% endif %}
                 </div>
                 <div class="overflow-hidden">
                   <h6 class="mb-0 text-dark fw-bold text-truncate">
-                    {% if user.get_full_name %}{{ user.get_full_name }}{% else
-                    %}{{ user.username }}{% endif %}
+                    {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}
                   </h6>
                   <small class="text-muted d-block mt-0.5">Member</small>
                 </div>

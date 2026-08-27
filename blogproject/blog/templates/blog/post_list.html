@@ -46,15 +46,15 @@
                                 </p>
                                 
                                 <div class="pt-3 border-top d-flex justify-content-between align-items-center">
+                                    <!-- Author Avatar Updated to Use get_avatar_url -->
                                     <div class="d-flex align-items-center gap-2">
-                                        {% if post.author.profile_picture %}
-                                            <img src="{{ post.author.profile_picture.url }}" class="rounded-circle" width="24" height="24" style="object-fit: cover;">
+                                        {% if post.author %}
+                                            <img src="{{ post.author.get_avatar_url }}" class="rounded-circle" width="24" height="24" style="object-fit: cover;" alt="{{ post.author.user.username }}">
+                                            <small class="fw-semibold text-dark">{{ post.author.user.username }}</small>
                                         {% else %}
-                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center fw-bold text-secondary" style="width: 24px; height: 24px; font-size: 11px;">
-                                                {{ post.author.user.username|slice:":1"|upper }}
-                                            </div>
+                                            <img src="https://ui-avatars.com/api/?name=Anonymous&background=6c757d&color=fff" class="rounded-circle" width="24" height="24" style="object-fit: cover;" alt="Anonymous">
+                                            <small class="fw-semibold text-dark">Anonymous</small>
                                         {% endif %}
-                                        <small class="fw-semibold text-dark">{{ post.author.user.username }}</small>
                                     </div>
                                     <small class="text-muted"><i class="bi bi-eye me-1"></i>{{ post.views }} views</small>
                                 </div>

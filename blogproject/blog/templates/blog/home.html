@@ -127,28 +127,17 @@
 
                   <!-- 3. SUBTLE DIVIDER & BOTTOM METADATA ROW -->
                   <div class="card-footer-meta pt-2 border-top d-flex justify-content-between align-items-center mt-auto">
-                    <!-- Author Info -->
+                    <!-- Author Info (Using Model Avatar Property) -->
                     {% if post.author %}
                     <a href="{% url 'blog:author_detail' username=post.author.user.username %}" class="author-profile-link d-flex align-items-center gap-2 text-decoration-none">
-                      {% if post.author.profile_picture %}
-                      <img src="{{ post.author.profile_picture.url }}" class="rounded-circle author-mini-avatar" style="width: 28px !important; height: 28px !important; min-width: 28px; min-height: 28px; max-width: 28px; max-height: 28px; object-fit: cover;" alt="{{ post.author }}" />
-                      {% elif post.author.user.profile_picture %}
-                      <img src="{{ post.author.user.profile_picture.url }}" class="rounded-circle author-mini-avatar" style="width: 28px !important; height: 28px !important; min-width: 28px; min-height: 28px; max-width: 28px; max-height: 28px; object-fit: cover;" alt="{{ post.author }}" />
-                      {% else %}
-                      <div class="author-avatar-fallback rounded-circle d-flex align-items-center justify-content-center text-muted fw-bold flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.75rem">
-                        {{ post.author.user.username|slice:":1"|upper }}
-                      </div>
-                      {% endif %}
-
+                      <img src="{{ post.author.get_avatar_url }}" class="rounded-circle author-mini-avatar" style="width: 28px !important; height: 28px !important; min-width: 28px; min-height: 28px; max-width: 28px; max-height: 28px; object-fit: cover;" alt="{{ post.author.user.username }}" />
                       <span class="author-name-link fw-semibold text-truncate">
                         {{ post.author.user.get_full_name|default:post.author.user.username }}
                       </span>
                     </a>
                     {% else %}
                     <div class="d-flex align-items-center gap-2">
-                      <div class="author-avatar-fallback rounded-circle d-flex align-items-center justify-content-center text-muted fw-bold" style="width: 28px; height: 28px">
-                        A
-                      </div>
+                      <img src="https://ui-avatars.com/api/?name=Anonymous&background=6c757d&color=fff" class="rounded-circle author-mini-avatar" style="width: 28px !important; height: 28px !important; min-width: 28px; min-height: 28px; max-width: 28px; max-height: 28px; object-fit: cover;" alt="Anonymous" />
                       <span class="author-name-link fw-semibold text-truncate">Anonymous</span>
                     </div>
                     {% endif %}

@@ -10,6 +10,10 @@ from django.views.generic import View, CreateView, DeleteView, DetailView, ListV
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.core.cache import cache
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import HttpResponseNotAllowed
 
 from .forms import PostForm, CommentForm, AuthorProfileForm
 from .models import Post, Comment, Category, Tag, Author, Bookmark
@@ -131,7 +135,7 @@ class PostDetailView(BlogSidebarMixin, DetailView):
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
 
-        # Check if the current user is authenticated and is the author of this post
+        # Check if current user is authenticated and is the author of this post
         is_author = (
             request.user.is_authenticated 
             and hasattr(self.object, 'author') 
@@ -139,14 +143,18 @@ class PostDetailView(BlogSidebarMixin, DetailView):
             and self.object.author.user == request.user
         )
 
-        # Only increment view counter if the visitor is NOT the author
-        if not is_author:
+        # Retrieve viewed posts array from session
+        viewed_posts = request.session.get('viewed_posts', [])
+
+        # Only increment if visitor is NOT author and hasn't viewed this post in current session
+        if not is_author and self.object.pk not in viewed_posts:
             Post.objects.filter(pk=self.object.pk).update(views=F("views") + 1)
-            self.object.refresh_from_db()
+            self.object.refresh_from_db(fields=['views'])
+            
+            viewed_posts.append(self.object.pk)
+            request.session['viewed_posts'] = viewed_posts
 
         return response
-
-
 class PostCreateView(SuccessMessageMixin, LoginRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
@@ -266,20 +274,22 @@ def reply_comment(request, slug, pk):
 def edit_comment(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
     
+    # Safe slug lookup whether it's a main comment or nested reply
+    post_slug = comment.post.slug if comment.post else comment.parent.post.slug
+
     if request.user != comment.user and not request.user.is_staff:
         messages.error(request, 'You do not have permission to edit this comment.')
-        return redirect('blog:post_detail', slug=comment.post.slug)
+        return redirect('blog:post_detail', slug=post_slug)
 
     if request.method == 'POST':
         form = CommentForm(request.POST, instance=comment)
         if form.is_valid():
             form.save()
             messages.success(request, 'Comment updated successfully.')
-            return redirect('blog:post_detail', slug=comment.post.slug)
-    else:
-        form = CommentForm(instance=comment)
-        
-    return render(request, 'blog/comment_form.html', {'form': form, 'comment': comment})
+        else:
+            messages.error(request, 'Failed to update comment. Please check your text.')
+    
+    return redirect('blog:post_detail', slug=post_slug)
 
 
 @login_required

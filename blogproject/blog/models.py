@@ -33,6 +33,17 @@ class Author(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def get_avatar_url(self):
+        """Returns uploaded profile picture URL or generates a dynamic initial avatar."""
+        if self.profile_picture:
+            try:
+                return self.profile_picture.url
+            except ValueError:
+                pass
+        username = self.user.username if self.user else "User"
+        return f"https://ui-avatars.com/api/?name={username}&background=0D6EFD&color=fff"
+
     def __str__(self):
         return self.user.username
 
@@ -44,8 +55,6 @@ class Author(models.Model):
             models.Index(fields=["joined_date"]),
             models.Index(fields=["updated_at"]),
         ]
-
-
 class Category(models.Model):
     name = models.CharField(max_length=200, unique=True)
 
