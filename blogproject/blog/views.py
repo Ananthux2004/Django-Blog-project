@@ -30,9 +30,13 @@ def home(request):
 
     # Query optimization
     posts = posts_qs.select_related('author__user', 'category').prefetch_related('tags')
-    recent_qs = posts.order_by('-published_date')
+    
+    # FIX 1: Sort by -created_date so post ordering isn't broken by null published_date fields
+    recent_qs = posts.order_by('-created_date')
 
-    # Caching latest posts query
+    # FIX 2: Clear cache key once to purge stale order data
+    # cache.delete('homepage_latest_posts')
+
     latest_posts = cache.get('homepage_latest_posts')
     if latest_posts is None:
         latest_posts = list(recent_qs[:6])
@@ -52,7 +56,6 @@ def home(request):
     }
 
     return render(request, "blog/home.html", context)
-
 
 # ==========================================
 # MIXINS & SIDEBAR CONTEXT
