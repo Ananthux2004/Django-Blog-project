@@ -12,7 +12,7 @@ class PostForm(forms.ModelForm):
         widget=forms.TextInput(
             attrs={
                 "class": "form-control",
-                "placeholder": "e.g. anime, movies, tech (separated by commas)",
+                "placeholder": "",
             }
         ),
         help_text="Separate tags with commas.",

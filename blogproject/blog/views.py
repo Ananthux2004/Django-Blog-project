@@ -29,37 +29,41 @@ from django.shortcuts import render
 from django.db.models import Count
 from django.core.cache import cache
 from .models import Post, Category, Tag
-
+from django.shortcuts import render
+from django.core.cache import cache
+from django.db.models import Count
+from .models import Post, Category, Tag
 
 def home(request):
+    # 1. Base QuerySet filtering based on user permissions
     if request.user.is_staff:
         posts_qs = Post.objects.all()
     else:
         posts_qs = Post.objects.filter(status=Post.StatusChoices.PUBLISHED)
 
+    # Optimize DB queries with select_related / prefetch_related
     posts = posts_qs.select_related('author__user', 'category').prefetch_related('tags')
-    
-    # Order by published_date first so newly published drafts sort to the top
-    recent_qs = posts.order_by('-published_date', '-created_date')
 
-    # Cache post IDs while preserving fresh live view counter evaluations
-    latest_post_ids = cache.get('homepage_latest_post_ids')
-    if latest_post_ids is None:
-        latest_post_ids = list(recent_qs.values_list('id', flat=True)[:6])
-        cache.set('homepage_latest_post_ids', latest_post_ids, 60 * 15)
+    # 2. Live fetch top 3 most-viewed posts (strictly ordered by view count descending)
+    top_viewed_posts = list(posts.order_by('-views', '-published_date')[:3])
+    top_viewed_ids = {p.id for p in top_viewed_posts}
 
-    # Re-evaluate live model instances with fresh view counts
-    posts_dict = {p.id: p for p in posts.filter(id__in=latest_post_ids)}
-    latest_posts = [posts_dict[pid] for pid in latest_post_ids if pid in posts_dict]
+    # 3. Fetch latest posts dynamically while excluding top-viewed IDs
+    #    (This guarantees instantly updated feeds when views change)
+    latest_posts = list(
+        posts.exclude(id__in=top_viewed_ids)
+             .order_by('-published_date', '-created_date')[:6]
+    )
 
     context = {
-        'posts': recent_qs,
+        'top_viewed_posts': top_viewed_posts,
         'latest_posts': latest_posts,
-        'featured_post': recent_qs.first(),
-        'recent_posts': recent_qs[:5],
-        'popular_posts': posts.order_by('-views')[:5],
-        'sidebar_categories': Category.objects.annotate(post_count=Count('posts')).order_by('name'),
-        'sidebar_tags': Tag.objects.annotate(post_count=Count('posts')).order_by('-post_count')[:10],
+        'sidebar_categories': Category.objects.annotate(
+            post_count=Count('posts')
+        ).order_by('name'),
+        'sidebar_tags': Tag.objects.annotate(
+            post_count=Count('posts')
+        ).order_by('-post_count')[:10],
     }
 
     return render(request, "blog/home.html", context)

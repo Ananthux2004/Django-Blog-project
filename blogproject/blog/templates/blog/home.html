@@ -5,71 +5,125 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'blog/css/home.css' %}" />
+<style>
+  /* Auto-Sliding Banner Custom Styling */
+  .hero-carousel-item {
+    height: 380px;
+    background-color: #1e1e2f;
+  }
+  .carousel-bg-img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+
+  /* Overlay container - prevents blocking button clicks */
+  .carousel-overlay {
+    background: linear-gradient(180deg, rgba(15, 15, 26, 0.2) 0%, rgba(15, 15, 26, 0.88) 100%);
+    pointer-events: none; /* Allows click events to pass through background */
+  }
+
+  /* Interactive Elements Container */
+  .carousel-content-box {
+    pointer-events: auto; /* Re-enables clicks for buttons & links */
+    position: relative;
+    z-index: 10;
+  }
+
+  .carousel-indicators [data-bs-target] {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+
+  /* Ensure carousel controls don't overlap clickable text */
+  .carousel-control-prev,
+  .carousel-control-next {
+    width: 8%;
+    z-index: 12;
+  }
+</style>
 {% endblock extra_css %}
 
 {% block content %}
 <div class="homepage-wrapper py-2 py-md-4">
   <div class="container">
-    <!-- HERO / FEATURED BANNER -->
-    <section class="hero-banner mb-5">
-      <div class="row align-items-center g-4">
-        {% if featured_post %}
-        <div class="col-lg-6 hero-text-col">
-          <span class="badge hero-badge mb-3">Featured Post</span>
-          <h1 class="hero-title fw-bold text-dark mb-3">
-            {{ featured_post.title }}
-          </h1>
-          <p class="hero-excerpt text-muted mb-4">
-            {{ featured_post.excerpt|truncatewords:25 }}
-          </p>
-          <div class="hero-cta-group d-flex flex-wrap gap-3 align-items-center">
-            <a href="{% url 'blog:post_detail' slug=featured_post.slug %}" class="btn btn-purple-primary">
-              Read Article <i class="bi bi-arrow-right ms-1"></i>
-            </a>
-            <a href="{% url 'blog:category_list' %}" class="btn btn-outline-purple">
-              Browse Categories
-            </a>
-          </div>
-        </div>
-        <div class="col-lg-6 hero-visual-col">
-          <div class="hero-media-wrapper">
-            {% if featured_post.featured_image %}
-            <img src="{{ featured_post.featured_image.url }}" class="img-fluid hero-img rounded-4" alt="{{ featured_post.title }}" />
-            {% else %}
-            <div class="hero-graphic-placeholder rounded-4 d-flex align-items-center justify-content-center">
-              <i class="bi bi-laptop code-hero-icon"></i>
-            </div>
-            {% endif %}
-          </div>
-        </div>
-        {% else %}
-        <div class="col-lg-6 hero-text-col">
-          <span class="badge hero-badge mb-3">Welcome to DevBlog</span>
-          <h1 class="hero-title fw-bold text-dark mb-3">
-            The DevBlog <br /><span class="text-purple-highlight">Engineering Hub</span>
-          </h1>
-          <p class="hero-excerpt text-muted mb-4">
-            Explore our full suite of technical writeups regarding modern design patterns, systems architecture, and web optimization practices.
-          </p>
-          <div class="hero-cta-group d-flex flex-wrap gap-3 align-items-center">
-            <a href="{% url 'blog:post_list' %}" class="btn btn-purple-primary">
-              Explore Latest Posts <i class="bi bi-arrow-right ms-1"></i>
-            </a>
-            <a href="{% url 'blog:category_list' %}" class="btn btn-outline-purple">
-              Browse Categories
-            </a>
-          </div>
-        </div>
-        <div class="col-lg-6 hero-visual-col">
-          <div class="hero-graphic-placeholder rounded-4 d-flex align-items-center justify-content-center">
-            <div class="hero-illustration-box text-center">
-              <i class="bi bi-code-slash hero-code-icon"></i>
-            </div>
-          </div>
-        </div>
-        {% endif %}
+
+    <!-- TOP VIEWED AUTO-SLIDING BANNER -->
+    {% if top_viewed_posts %}
+    <div id="topViewedCarousel" class="carousel slide carousel-fade mb-5 shadow-sm rounded-4 overflow-hidden position-relative" data-bs-ride="carousel" data-bs-interval="4000" data-bs-pause="hover">
+      
+      <!-- Slide Indicators (Dots) -->
+      <div class="carousel-indicators mb-3" style="z-index: 15;">
+        {% for post in top_viewed_posts %}
+          <button type="button" data-bs-target="#topViewedCarousel" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}" aria-current="{% if forloop.first %}true{% endif %}" aria-label="Slide {{ forloop.counter }}"></button>
+        {% endfor %}
       </div>
-    </section>
+
+      <!-- Carousel Inner Slides -->
+      <div class="carousel-inner">
+        {% for post in top_viewed_posts %}
+        <div class="carousel-item hero-carousel-item {% if forloop.first %}active{% endif %}">
+          {% if post.featured_image %}
+            <img src="{{ post.featured_image.url }}" class="carousel-bg-img" alt="{{ post.title }}">
+          {% else %}
+            <div class="carousel-bg-img bg-dark d-flex align-items-center justify-content-center">
+              <i class="bi bi-journal-code text-white-50 display-1"></i>
+            </div>
+          {% endif %}
+
+          <!-- Text & Details Overlay -->
+          <div class="carousel-caption carousel-overlay d-flex flex-column justify-content-end align-items-start p-4 p-md-5 text-start start-0 end-0 top-0 bottom-0">
+            <div class="carousel-content-box">
+              <div class="mb-2 d-flex align-items-center gap-2">
+                <span class="badge bg-purple-primary rounded-pill px-3 py-1">
+                  <i class="bi bi-fire me-1"></i> Top Viewed #{{ forloop.counter }}
+                </span>
+                {% if post.category %}
+                  <span class="badge bg-light text-dark rounded-pill px-3 py-1">
+                    {{ post.category.name }}
+                  </span>
+                {% endif %}
+              </div>
+
+              <h2 class="display-6 fw-bold text-white mb-2 text-truncate" style="max-width: 800px;">
+                <a href="{% url 'blog:post_detail' slug=post.slug %}" class="text-white text-decoration-none">
+                  {{ post.title }}
+                </a>
+              </h2>
+
+              <p class="text-white-50 mb-3 d-none d-md-block" style="max-width: 650px;">
+                {{ post.excerpt|default:post.content|striptags|truncatewords:20 }}
+              </p>
+
+              <div class="d-flex align-items-center gap-3 mt-1">
+                <a href="{% url 'blog:post_detail' slug=post.slug %}" class="btn btn-purple-primary rounded-pill px-4 py-2 position-relative" style="z-index: 20;">
+                  Read Article <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+                <span class="text-white-50 small">
+                  <i class="bi bi-eye me-1"></i> {{ post.views|default:"0" }} views • By {{ post.author.user.get_full_name|default:post.author.user.username }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Left & Right Controls -->
+      <button class="carousel-control-prev" type="button" data-bs-target="#topViewedCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#topViewedCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+
+    </div>
+    {% endif %}
 
     <!-- MAIN TWO-COLUMN BODY -->
     <main class="main-content-layout">
@@ -127,7 +181,7 @@
 
                   <!-- 3. SUBTLE DIVIDER & BOTTOM METADATA ROW -->
                   <div class="card-footer-meta pt-2 border-top d-flex justify-content-between align-items-center mt-auto">
-                    <!-- Author Info (Using Model Avatar Property) -->
+                    <!-- Author Info -->
                     {% if post.author %}
                     <a href="{% url 'blog:author_detail' username=post.author.user.username %}" class="author-profile-link d-flex align-items-center gap-2 text-decoration-none">
                       <img src="{{ post.author.get_avatar_url }}" class="rounded-circle author-mini-avatar" style="width: 28px !important; height: 28px !important; min-width: 28px; min-height: 28px; max-width: 28px; max-height: 28px; object-fit: cover;" alt="{{ post.author.user.username }}" />
@@ -247,3 +301,20 @@
   {% endif %}
 </div>
 {% endblock content %}
+
+{% block extra_js %}
+<script>
+  // Explicitly initialize Bootstrap Carousel auto-play script
+  document.addEventListener('DOMContentLoaded', function () {
+    var carouselElement = document.getElementById('topViewedCarousel');
+    if (carouselElement && typeof bootstrap !== 'undefined') {
+      var carousel = new bootstrap.Carousel(carouselElement, {
+        interval: 4000,
+        ride: 'carousel',
+        pause: 'hover'
+      });
+      carousel.cycle();
+    }
+  });
+</script>
+{% endblock extra_js %}
