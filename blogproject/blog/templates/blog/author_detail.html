@@ -168,20 +168,22 @@
             </div>
         </div>
 
-        <!-- Draft Posts (Owner Only) -->
+        <!-- Draft Posts (Owner Only - Clickable Link) -->
         {% if is_owner %}
         <div class="col-6 col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 hover-lift h-100 bg-warning-subtle border-warning-subtle">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="stat-icon-wrapper bg-warning text-dark fs-4">
-                        <i class="bi bi-file-earmark-lock"></i>
-                    </div>
-                    <div>
-                        <h3 class="fw-bold mb-0 text-dark">{{ draft_count }}</h3>
-                        <span class="text-dark-emphasis small fw-medium">Drafts</span>
+            <a href="{% url 'blog:dashboard' %}" class="text-decoration-none text-dark d-block h-100">
+                <div class="card border-0 shadow-sm rounded-4 p-3 hover-lift h-100 bg-warning-subtle border-warning-subtle">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrapper bg-warning text-dark fs-4">
+                            <i class="bi bi-file-earmark-lock"></i>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0 text-dark">{{ draft_count }}</h3>
+                            <span class="text-dark-emphasis small fw-medium">Drafts</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
         {% endif %}
 

@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 from django.urls import reverse
+from django.core.cache import cache
 
 class Author(models.Model):
     """
@@ -191,6 +192,10 @@ class Post(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+        # Auto-populate published_date when status is changed to PUBLISHED
+        if self.status == self.StatusChoices.PUBLISHED and not self.published_date:
+            self.published_date = timezone.now()
+        cache.delete('homepage_latest_post_ids')
         super().save(*args, **kwargs)
 
     def publish(self):

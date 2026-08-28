@@ -13,7 +13,6 @@ class PostForm(forms.ModelForm):
             "featured_image",
             "category",
             "tags",
-            "status",
             "is_featured",
         ]
         

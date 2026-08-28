@@ -28,9 +28,7 @@
           <a class="nav-link" href="{% url 'blog:post_list' %}">Posts</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'blog:category_list' %}"
-            >Categories</a
-          >
+          <a class="nav-link" href="{% url 'blog:category_list' %}">Categories</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'blog:tag_list' %}">Tags</a>
@@ -131,6 +129,28 @@
 
             <li><hr class="dropdown-divider my-1 text-black-50" /></li>
 
+            <!-- Author Dashboard -->
+            <li>
+              <a
+                class="dropdown-item py-2 d-flex align-items-center gap-2"
+                href="{% url 'blog:dashboard' %}"
+              >
+                <i class="bi bi-speedometer2 text-muted fs-5"></i>
+                <span>Author Dashboard</span>
+              </a>
+            </li>
+
+            <!-- Direct Drafts Link -->
+            <li>
+              <a
+                class="dropdown-item py-2 d-flex align-items-center gap-2"
+                href="{% url 'blog:dashboard' %}?status=draft"
+              >
+                <i class="bi bi-file-earmark-text text-muted fs-5"></i>
+                <span>My Drafts</span>
+              </a>
+            </li>
+
             <li>
               <a
                 class="dropdown-item py-2 d-flex align-items-center gap-2"
@@ -151,22 +171,13 @@
                   <span>Notifications</span>
                 </div>
                 {% if unread_notifications_count %}
-                <span class="badge bg-danger rounded-pill"
-                  >{{ unread_notifications_count }}</span
-                >
+                <span class="badge bg-danger rounded-pill">
+                  {{ unread_notifications_count }}
+                </span>
                 {% endif %}
               </a>
             </li>
 
-            <li>
-              <a
-                class="dropdown-item py-2 d-flex align-items-center gap-2"
-                href="{% url 'blog:author_detail' user.username %}"
-              >
-                <i class="bi bi-file-earmark-text text-muted fs-5"></i>
-                <span>My Posts</span>
-              </a>
-            </li>
             <li>
               <a
                 class="dropdown-item py-2 d-flex align-items-center gap-2"
@@ -176,6 +187,7 @@
                 <span>Saved Posts</span>
               </a>
             </li>
+
             <li>
               <a
                 class="dropdown-item py-2 d-flex align-items-center gap-2"
@@ -209,14 +221,10 @@
         {% else %}
         <!-- UNIFIED LOGIN & SIGNUP LINKS -->
         <li class="nav-item">
-          <a class="nav-link auth-nav-link" href="{% url 'accounts:login' %}"
-            >Login</a
-          >
+          <a class="nav-link auth-nav-link" href="{% url 'accounts:login' %}">Login</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link auth-nav-link" href="{% url 'accounts:register' %}"
-            >Signup</a
-          >
+          <a class="nav-link auth-nav-link" href="{% url 'accounts:register' %}">Signup</a>
         </li>
         {% endif %}
       </ul>

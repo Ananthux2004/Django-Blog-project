@@ -25,29 +25,32 @@ User = get_user_model()
 # CORE & HOMEPAGE VIEWS
 # ==========================================
 
+from django.shortcuts import render
+from django.db.models import Count
+from django.core.cache import cache
+from .models import Post, Category, Tag
+
+
 def home(request):
-    """Dynamic Homepage view passing post and sidebar context with low-level caching."""
     if request.user.is_staff:
         posts_qs = Post.objects.all()
     else:
-        posts_qs = Post.objects.filter(status='published')
+        posts_qs = Post.objects.filter(status=Post.StatusChoices.PUBLISHED)
 
-    # Query optimization
     posts = posts_qs.select_related('author__user', 'category').prefetch_related('tags')
     
-    # FIX 1: Sort by -created_date so post ordering isn't broken by null published_date fields
-    recent_qs = posts.order_by('-created_date')
+    # Order by published_date first so newly published drafts sort to the top
+    recent_qs = posts.order_by('-published_date', '-created_date')
 
-    # FIX 2: Clear cache key once to purge stale order data
-    # cache.delete('homepage_latest_posts')
+    # Cache post IDs while preserving fresh live view counter evaluations
+    latest_post_ids = cache.get('homepage_latest_post_ids')
+    if latest_post_ids is None:
+        latest_post_ids = list(recent_qs.values_list('id', flat=True)[:6])
+        cache.set('homepage_latest_post_ids', latest_post_ids, 60 * 15)
 
-    latest_posts = cache.get('homepage_latest_posts')
-    if latest_posts is None:
-        latest_posts = list(recent_qs[:6])
-        cache.set('homepage_latest_posts', latest_posts, 60 * 15)
-        print("[CACHE MISS] Fetched latest posts from Database.")
-    else:
-        print("[CACHE HIT] Loaded latest posts directly from Cache.")
+    # Re-evaluate live model instances with fresh view counts
+    posts_dict = {p.id: p for p in posts.filter(id__in=latest_post_ids)}
+    latest_posts = [posts_dict[pid] for pid in latest_post_ids if pid in posts_dict]
 
     context = {
         'posts': recent_qs,
@@ -60,7 +63,6 @@ def home(request):
     }
 
     return render(request, "blog/home.html", context)
-
 # ==========================================
 # MIXINS & SIDEBAR CONTEXT
 # ==========================================
@@ -163,22 +165,24 @@ class PostCreateView(SuccessMessageMixin, LoginRequiredMixin, CreateView):
     slug_field = "slug"
 
     def form_valid(self, form):
-        print("FILES IN REQUEST:", self.request.FILES)
-        author, _ = Author.objects.get_or_create(user=self.request.user)
-        form.instance.author = author   
-        response = super().form_valid(form)
-
-        if self.object.featured_image:
-            print("SAVED IMAGE URL:", self.object.featured_image.url)
-            print("STORAGE BACKEND:", self.object.featured_image.storage)
+        if hasattr(self.request.user, 'author'):
+            form.instance.author = self.request.user.author
         else:
-            print("NO IMAGE WAS SAVED TO MODEL")
-        return response
+            form.instance.author = self.request.user
+
+        action = self.request.POST.get('action')
+        if action == 'draft':
+            form.instance.status = 'draft'
+            response = super().form_valid(form)
+            # Redirect straight to dashboard filtered by drafts
+            return redirect(f"{reverse_lazy('blog:dashboard')}?status=draft")
+        else:
+            form.instance.status = 'published'
+            return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy("blog:post_detail", kwargs={"slug": self.object.slug})
-
-
+    
 class PostUpdateView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
     form_class = PostForm
@@ -191,10 +195,21 @@ class PostUpdateView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixi
         obj = self.get_object()
         return self.request.user.is_staff or obj.author.user == self.request.user
 
+    def form_valid(self, form):
+        # Set status based on the button submitted
+        if self.request.POST.get('action') == 'publish':
+            form.instance.status = getattr(Post.StatusChoices, 'PUBLISHED', 'published')
+        else:
+            form.instance.status = getattr(Post.StatusChoices, 'DRAFT', 'draft')
+
+        return super().form_valid(form)
+
     def get_success_url(self):
+        # Redirect drafts to dashboard so non-staff authors don't hit a 404 on post_detail
+        if self.object.status == getattr(Post.StatusChoices, 'DRAFT', 'draft'):
+            return reverse_lazy("blog:dashboard")
         return reverse_lazy("blog:post_detail", kwargs={"slug": self.object.slug})
-
-
+    
 class PostDeleteView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Post
     template_name = "blog/post_confirm_delete.html"
@@ -586,4 +601,52 @@ class SavedPostsListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['total_saved'] = Bookmark.objects.filter(user=self.request.user).count()
+        return context
+class UserPostListView(LoginRequiredMixin, ListView):
+    model = Post
+    template_name = "blog/my_posts.html"
+    context_object_name = "posts"
+    paginate_by = 10
+
+    def get_author_qs(self):
+        user = self.request.user
+        if hasattr(user, 'author'):
+            return Post.objects.filter(author=user.author)
+        return Post.objects.filter(Q(author=user) | Q(author__user=user))
+
+    def get_queryset(self):
+        qs = self.get_author_qs()
+        status_param = self.request.GET.get('status')
+        sort_param = self.request.GET.get('sort', 'newest')
+
+        # Filter by status tab selection
+        if status_param == 'draft':
+            qs = qs.filter(Q(status__iexact='draft') | Q(status='D'))
+        elif status_param == 'published':
+            qs = qs.filter(Q(status__iexact='published') | Q(status='P'))
+        elif status_param == 'featured':
+            qs = qs.filter(Q(is_featured=True) | Q(featured=True))
+
+        # Sorting choices
+        if sort_param == 'oldest':
+            qs = qs.order_by('created_date')
+        elif sort_param == 'views':
+            qs = qs.order_by('-views')
+        else:
+            qs = qs.order_by('-created_date')
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        all_user_posts = self.get_author_qs()
+
+        # Counter stats for top dashboard cards
+        context['total_my_posts'] = all_user_posts.count()
+        context['published_my_posts'] = all_user_posts.filter(Q(status__iexact='published') | Q(status='P')).count()
+        context['draft_my_posts'] = all_user_posts.filter(Q(status__iexact='draft') | Q(status='D')).count()
+
+        # Active filter tracking for UI pills
+        context['current_status'] = self.request.GET.get('status', '')
+        context['current_sort'] = self.request.GET.get('sort', 'newest')
         return context

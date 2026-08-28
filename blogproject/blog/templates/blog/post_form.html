@@ -80,18 +80,10 @@
                 {% endif %}
             </div>
 
-            <div class="col-md-6">
+            <div class="col-12">
                 <label class="form-label">{{ form.category.label }}</label>
                 {{ form.category }}
                 {% for error in form.category.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">{{ form.status.label }}</label>
-                {{ form.status }}
-                {% for error in form.status.errors %}
                     <div class="text-danger small">{{ error }}</div>
                 {% endfor %}
             </div>
@@ -121,12 +113,12 @@
 
         <div class="mt-4 d-flex gap-2">
 
-            <button type="submit" class="btn btn-primary">
-                {% if object %}
-                    Save Changes
-                {% else %}
-                    Create Post
-                {% endif %}
+            <button type="submit" name="action" value="publish" class="btn btn-primary">
+                Publish Post
+            </button>
+
+            <button type="submit" name="action" value="draft" class="btn btn-secondary">
+                Save as Draft
             </button>
 
             {% if object %}
@@ -146,4 +138,13 @@
     </form>
 
 </div>
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const submitBtns = this.querySelectorAll('button[type="submit"]');
+        submitBtns.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Saving...`;
+        });
+    });
+</script>
 {% endblock %}
