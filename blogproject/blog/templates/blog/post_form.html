@@ -2,149 +2,236 @@
 {% load static %}
 
 {% block title %}
-    {% if object %}
-        Edit Post
-    {% else %}
-        Create Post
-    {% endif %}
+    {% if object %}Edit Post | {{ object.title }}{% else %}Create New Post{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container-fluid px-lg-5 py-4">
 
-    <h1 class="mb-4">
-        {% if object %}
-            Edit Post
-        {% else %}
-            Create Post
-        {% endif %}
-    </h1>
+    <!-- Header Navigation Bar -->
+    <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-dark">
+                {% if object %}Edit Article{% else %}Create New Article{% endif %}
+            </h1>
+            <p class="text-muted small mb-0">Write and customize your blog post details below.</p>
+        </div>
+        <div>
+            {% if object %}
+                <a href="{% url 'blog:post_detail' slug=object.slug %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <i class="bi bi-eye me-1"></i> View Live
+                </a>
+            {% endif %}
+            <a href="{% url 'blog:dashboard' %}" class="btn btn-light btn-sm rounded-pill px-3 ms-1">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
 
-    <form method="post" enctype="multipart/form-data" novalidate>
+    <!-- Main Form Grid -->
+    <form method="post" enctype="multipart/form-data" id="post-editor-form" novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-            <div class="alert alert-danger">
+            <div class="alert alert-danger rounded-3 shadow-sm mb-4">
                 {% for error in form.non_field_errors %}
-                    <div>{{ error }}</div>
+                    <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}</div>
                 {% endfor %}
             </div>
         {% endif %}
 
-        <div class="row g-3">
-
-            <div class="col-12">
-                <label class="form-label">{{ form.title.label }}</label>
-                {{ form.title }}
-                {% for error in form.title.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">{{ form.excerpt.label }}</label>
-                {{ form.excerpt }}
-                {% for error in form.excerpt.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">{{ form.content.label }}</label>
-                {{ form.content }}
-                {% for error in form.content.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">{{ form.featured_image.label }}</label>
-
-                {{ form.featured_image }}
-
-                {% for error in form.featured_image.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-
-                {% if object %}
-                    {% if object.featured_image %}
-                        <div class="mt-3">
-                            <img
-                                src="{{ object.featured_image.url }}"
-                                alt="{{ object.title }}"
-                                class="img-fluid rounded"
-                                style="max-height:220px;"
-                            >
-                        </div>
-                    {% endif %}
-                {% endif %}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">{{ form.category.label }}</label>
-                {{ form.category }}
-                {% for error in form.category.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">{{ form.tags.label }}</label>
-                {{ form.tags }}
-                {% for error in form.tags.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="col-12">
-                <div class="form-check">
-                    {{ form.is_featured }}
-                    <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
-                        {{ form.is_featured.label }}
-                    </label>
-
-                    {% for error in form.is_featured.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+        <div class="row g-4">
+            
+            <!-- Main Content Area (Left Column - 8 Cols) -->
+            <div class="col-lg-8">
+                
+                <!-- Title Card -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-body p-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase tracking-wider">Title</label>
+                        {{ form.title }}
+                        {% for error in form.title.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
                 </div>
+
+                <!-- Content Body Card -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-body p-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase tracking-wider">Article Content</label>
+                        {{ form.content }}
+                        {% for error in form.content.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Excerpt Card -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-body p-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase tracking-wider">Excerpt / Summary</label>
+                        {{ form.excerpt }}
+                        <div class="form-text text-muted small">Short summary displayed on home cards and search results.</div>
+                        {% for error in form.excerpt.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
             </div>
 
-        </div>
+            <!-- Publishing & Metadata Sidebar (Right Column - 4 Cols) -->
+            <div class="col-lg-4">
 
-        <div class="mt-4 d-flex gap-2">
+                <!-- Publishing Actions Card -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4 sticky-top" style="top: 20px; z-index: 10;">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0 text-dark">Publish Options</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" name="action" value="publish" class="btn btn-primary btn-lg fw-semibold shadow-sm">
+                                <i class="bi bi-rocket-takeoff me-1"></i> 
+                                {% if object and object.status == 'published' %}Update Article{% else %}Publish Now{% endif %}
+                            </button>
 
-            <button type="submit" name="action" value="publish" class="btn btn-primary">
-                Publish Post
-            </button>
+                            <button type="submit" name="action" value="draft" class="btn btn-outline-secondary">
+                                <i class="bi bi-file-earmark-code me-1"></i> Save as Draft
+                            </button>
+                        </div>
 
-            <button type="submit" name="action" value="draft" class="btn btn-secondary">
-                Save as Draft
-            </button>
+                        <div class="form-check form-switch pt-2 border-top">
+                            {{ form.is_featured }}
+                            <label class="form-check-label fw-medium text-dark ms-2" for="{{ form.is_featured.id_for_label }}">
+                                Highlight as Featured Post
+                            </label>
+                            {% for error in form.is_featured.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
 
-            {% if object %}
-                <a href="{% url 'blog:post_detail' slug=object.slug %}"
-                   class="btn btn-outline-secondary">
-                    Cancel
-                </a>
-            {% else %}
-                <a href="{% url 'blog:post_list' %}"
-                   class="btn btn-outline-secondary">
-                    Cancel
-                </a>
-            {% endif %}
+                    </div>
+                </div>
+
+                <!-- Category & Tags Card -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0 text-dark">Taxonomy</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        
+                        <!-- Category Field -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Category</label>
+                            {{ form.category }}
+                            {% for error in form.category.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Free-Text Tags Input Field -->
+                        <div>
+                            <label class="form-label fw-bold text-dark small text-uppercase">Tags</label>
+                            {{ form.tags_input }}
+                            <div class="form-text text-muted small">{{ form.tags_input.help_text }}</div>
+                            {% for error in form.tags_input.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Cover Image Card with Live Preview -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold mb-0 text-dark">Featured Image</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        {{ form.featured_image }}
+                        {% for error in form.featured_image.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+
+                        <div class="mt-3 text-center bg-light p-2 rounded border border-dashed" id="image-preview-container">
+                            {% if object and object.featured_image %}
+                                <img src="{{ object.featured_image.url }}" id="img-preview" alt="Preview" class="img-fluid rounded shadow-sm" style="max-height: 180px; object-fit: cover;">
+                            {% else %}
+                                <img src="" id="img-preview" alt="Preview" class="img-fluid rounded shadow-sm d-none" style="max-height: 180px; object-fit: cover;">
+                                <p class="text-muted small mb-0 py-4" id="preview-placeholder">No image selected</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
 
         </div>
 
     </form>
-
 </div>
+
+<!-- Styling Adjustments -->
+<style>
+    .tracking-wider { letter-spacing: 0.05em; }
+    .border-dashed { border-style: dashed !important; }
+    textarea { resize: vertical; }
+</style>
+
+<!-- Fixed Submit Button Handler & Image Preview Script -->
 <script>
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const submitBtns = this.querySelectorAll('button[type="submit"]');
-        submitBtns.forEach(btn => {
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Saving...`;
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById('post-editor-form');
+
+        // Fix JS submit button bug: track clicked button without breaking request.POST['action']
+        let clickedButton = null;
+        form.querySelectorAll('button[type="submit"]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                clickedButton = this;
+            });
         });
+
+        form.addEventListener('submit', function (e) {
+            if (clickedButton) {
+                // Append hidden input matching the clicked button's name & value before disabling
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = clickedButton.name;
+                hiddenInput.value = clickedButton.value;
+                form.appendChild(hiddenInput);
+
+                // Disable all submit buttons to prevent double submission
+                const submitBtns = form.querySelectorAll('button[type="submit"]');
+                submitBtns.forEach(btn => {
+                    btn.disabled = true;
+                    if (btn === clickedButton) {
+                        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Saving...`;
+                    }
+                });
+            }
+        });
+
+        // Live Cover Image File Preview Logic
+        const imageInput = document.querySelector('input[type="file"]');
+        const imgPreview = document.getElementById('img-preview');
+        const placeholder = document.getElementById('preview-placeholder');
+
+        if (imageInput) {
+            imageInput.addEventListener('change', function () {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        imgPreview.src = e.target.result;
+                        imgPreview.classList.remove('d-none');
+                        if (placeholder) placeholder.classList.add('d-none');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
