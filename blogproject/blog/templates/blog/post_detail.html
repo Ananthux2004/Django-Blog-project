@@ -9,7 +9,7 @@
     <!-- Breadcrumb Navigation -->
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb mb-0 small text-uppercase tracking-wider fw-medium">
-            <li class="breadcrumb-item"><a href="{% url 'blog:post_list' %}" class="text-decoration-none">Blog</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'blog:home' %}" class="text-decoration-none">Blog</a></li>
             {% if post.category %}
                 <li class="breadcrumb-item"><a href="{% url 'blog:category_detail' post.category.slug %}" class="text-decoration-none">{{ post.category.name }}</a></li>
             {% endif %}

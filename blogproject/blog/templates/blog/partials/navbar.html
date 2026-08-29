@@ -148,11 +148,7 @@
         </a>
 
         {% if user.is_authenticated %}
-        <!-- Articles -->
-<a href="{% url 'blog:post_list' %}" class="nav-link py-2.5 px-3 rounded text-dark d-flex align-items-center gap-3 sidebar-item">
-  <i class="bi bi-journal-text fs-5 text-secondary"></i>
-  <span class="fw-medium">Articles</span>
-</a>
+
 
 <!-- Popular Tags -->
 <a href="{% url 'blog:tag_list' %}" class="nav-link py-2.5 px-3 rounded text-dark d-flex align-items-center gap-3 sidebar-item">
@@ -160,11 +156,7 @@
   <span class="fw-medium">Popular Tags</span>
 </a>
 
-<!-- Featured Posts -->
-<a href="{% url 'blog:post_list' %}" class="nav-link py-2.5 px-3 rounded text-dark d-flex align-items-center gap-3 sidebar-item">
-  <i class="bi bi-star fs-5 text-secondary"></i>
-  <span class="fw-medium">Featured Posts</span>
-</a>
+
         {% endif %}
       </div>
 

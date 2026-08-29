@@ -1,96 +1,41 @@
 <aside class="sidebar-wrapper">
 
-  <!-- 1. POPULAR POSTS WIDGET -->
-  <div class="mb-4 pb-2">
+  <!-- DISCOVER TOPICS (TAGS) WIDGET -->
+  <div class="sidebar-widget">
     <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-      <i class="bi bi-fire text-warning fs-5"></i>
-      <h5 class="fw-bold text-dark m-0 fs-6">Popular Posts</h5>
-    </div>
-
-    <div class="sidebar-post-list d-flex flex-column gap-3">
-      {% for post in popular_posts %}
-        <div class="sidebar-post-item">
-          <h6 class="fw-bold mb-1 lh-sm fs-7">
-            <a href="{% url 'blog:post_detail' slug=post.slug %}" class="text-dark text-decoration-none hover-title">
-              {{ post.title }}
-            </a>
-          </h6>
-          <div class="d-flex align-items-center gap-2 text-muted fs-8">
-            <span class="d-flex align-items-center gap-1">
-              <i class="bi bi-eye"></i> {{ post.views|default:"0" }} views
-            </span>
-          </div>
-        </div>
-      {% empty %}
-        <p class="text-muted small m-0">No popular posts found.</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- 2. RECENT POSTS WIDGET -->
-  <div class="mb-4 pb-2">
-    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-      <i class="bi bi-clock-history text-secondary fs-5"></i>
-      <h5 class="fw-bold text-dark m-0 fs-6">Recent Posts</h5>
-    </div>
-    
-    <div class="sidebar-post-list d-flex flex-column gap-3">
-      {% for post in recent_posts %}
-        <div class="sidebar-post-item">
-          <h6 class="fw-bold mb-1 lh-sm fs-7">
-            <a href="{% url 'blog:post_detail' slug=post.slug %}" class="text-dark text-decoration-none hover-title">
-              {{ post.title }}
-            </a>
-          </h6>
-          <div class="d-flex align-items-center gap-2 text-muted fs-8">
-            <span>By {{ post.author.user.get_full_name|default:post.author.user.username|default:post.author }}</span>
-            <span>•</span>
-            <span>{{ post.created_at|default:post.published_date|date:"M d, Y" }}</span>
-          </div>
-        </div>
-      {% empty %}
-        <p class="text-muted small m-0">No recent posts found.</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- 3. CATEGORIES WIDGET -->
-  <div class="mb-4 pb-2">
-    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-      <i class="bi bi-folder2-open text-secondary fs-5"></i>
-      <h5 class="fw-bold text-dark m-0 fs-6">Categories</h5>
-    </div>
-
-    <ul class="list-unstyled mb-0 d-flex flex-column gap-1">
-      {% for cat in sidebar_categories %}
-        <li>
-          <a href="{% url 'blog:category_detail' slug=cat.slug %}" class="d-flex justify-content-between align-items-center py-1 px-2 rounded text-decoration-none text-dark hover-bg">
-            <span class="small fw-medium">{{ cat.name }}</span>
-            <span class="badge bg-light text-dark border rounded-pill">{{ cat.post_count }}</span>
-          </a>
-        </li>
-      {% empty %}
-        <li class="text-muted small">No categories available.</li>
-      {% endfor %}
-    </ul>
-  </div>
-
-  <!-- 4. POPULAR TAGS WIDGET -->
-  <div class="mb-4 pb-2">
-    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-      <i class="bi bi-tags text-secondary fs-5"></i>
-      <h5 class="fw-bold text-dark m-0 fs-6">Popular Tags</h5>
+      <i class="bi bi-tags text-dark fs-5"></i>
+      <h5 class="fw-bold text-dark m-0 fs-6 text-uppercase tracking-wide">Recommended Topics</h5>
     </div>
 
     <div class="d-flex flex-wrap gap-2">
       {% for tag in sidebar_tags %}
-        <a href="{% url 'blog:tag_detail' slug=tag.slug %}" class="badge bg-light text-dark text-decoration-none fw-normal rounded-pill px-3 py-2 border">
-          #{{ tag.name }} <span class="text-muted fs-8">({{ tag.post_count }})</span>
+        <a href="{% url 'blog:tag_detail' slug=tag.slug %}" class="badge bg-light text-dark text-decoration-none fw-normal rounded-pill px-3 py-2 border hover-tag">
+          #{{ tag.name }}
+          {% if tag.post_count %}
+            <span class="text-muted ms-1 fs-8">({{ tag.post_count }})</span>
+          {% endif %}
         </a>
       {% empty %}
-        <span class="text-muted small">No tags available.</span>
+        <span class="text-muted small">No topics available yet.</span>
       {% endfor %}
     </div>
   </div>
 
 </aside>
+
+<style>
+  .tracking-wide {
+    letter-spacing: 0.05em;
+  }
+  .hover-tag {
+    transition: all 0.2s ease-in-out;
+  }
+  .hover-tag:hover {
+    background-color: #212529 !important;
+    color: #fff !important;
+    border-color: #212529 !important;
+  }
+  .hover-tag:hover .text-muted {
+    color: #e0e0e0 !important;
+  }
+</style>

@@ -17,6 +17,14 @@ from django.http import HttpResponseNotAllowed
 
 from .forms import PostForm, CommentForm, AuthorProfileForm
 from .models import Post, Comment, Category, Tag, Author, Bookmark
+from django.shortcuts import render
+from django.db.models import Count
+from django.core.cache import cache
+from .models import Post, Category, Tag
+from django.shortcuts import render
+from django.core.cache import cache
+from django.db.models import Count
+from .models import Post, Category, Tag
 
 User = get_user_model()
 
@@ -25,48 +33,57 @@ User = get_user_model()
 # CORE & HOMEPAGE VIEWS
 # ==========================================
 
-from django.shortcuts import render
-from django.db.models import Count
-from django.core.cache import cache
-from .models import Post, Category, Tag
-from django.shortcuts import render
-from django.core.cache import cache
-from django.db.models import Count
-from .models import Post, Category, Tag
 
 def home(request):
-    # 1. Base QuerySet filtering based on user permissions
-    if request.user.is_staff:
-        posts_qs = Post.objects.all()
+    # 1. Top viewed posts for hero banner
+    top_viewed_posts = Post.objects.filter(status='published').order_by(
+        '-views'
+    )[:3]
+
+    # Convert to list to prevent subquery errors on sliced QuerySets in SQL/Django
+    top_viewed_ids = list(top_viewed_posts.values_list('id', flat=True))
+
+    # 2. Determine active tab
+    active_tab = request.GET.get('tab', 'for_you')
+
+    # 3. Filter query based on active tab and order by latest publication date
+    if active_tab == 'featured':
+        posts_qs = Post.objects.filter(
+            status='published', is_featured=True
+        ).order_by('-published_date')
     else:
-        posts_qs = Post.objects.filter(status=Post.StatusChoices.PUBLISHED)
+        # Default "For you" feed (excluding top hero banner posts)
+        posts_qs = (
+            Post.objects.filter(status='published')
+            .exclude(id__in=top_viewed_ids)
+            .order_by('-published_date')
+        )
 
-    # Optimize DB queries with select_related / prefetch_related
-    posts = posts_qs.select_related('author__user', 'category').prefetch_related('tags')
+    # 4. Paginate
+    paginator = Paginator(posts_qs, 10)
+    page_number = request.GET.get('page', 1)
+    latest_posts = paginator.get_page(page_number)
 
-    # 2. Live fetch top 3 most-viewed posts (strictly ordered by view count descending)
-    top_viewed_posts = list(posts.order_by('-views', '-published_date')[:3])
-    top_viewed_ids = {p.id for p in top_viewed_posts}
+    # 5. Fetch tags for the sidebar (ADDED THIS STEP)
+    sidebar_tags = Tag.objects.annotate(
+        post_count=Count('posts', filter=Q(posts__status='published'))
+    ).filter(post_count__gt=0)
 
-    # 3. Fetch latest posts dynamically while excluding top-viewed IDs
-    #    (This guarantees instantly updated feeds when views change)
-    latest_posts = list(
-        posts.exclude(id__in=top_viewed_ids)
-             .order_by('-published_date', '-created_date')[:6]
-    )
+    # 6. Handle AJAX request for infinite scroll
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(
+            request,
+            'blog/partials/_post_feed_items.html',
+            {'latest_posts': latest_posts},
+        )
 
     context = {
         'top_viewed_posts': top_viewed_posts,
         'latest_posts': latest_posts,
-        'sidebar_categories': Category.objects.annotate(
-            post_count=Count('posts')
-        ).order_by('name'),
-        'sidebar_tags': Tag.objects.annotate(
-            post_count=Count('posts')
-        ).order_by('-post_count')[:10],
+        'active_tab': active_tab,
+        'sidebar_tags': sidebar_tags,
     }
-
-    return render(request, "blog/home.html", context)
+    return render(request, 'blog/home.html', context)
 # ==========================================
 # MIXINS & SIDEBAR CONTEXT
 # ==========================================
@@ -97,16 +114,7 @@ class BlogSidebarMixin:
 # POST CRUD VIEWS (INCORPORATING SIDEBAR)
 # ==========================================
 
-class PostListView(BlogSidebarMixin, ListView):
-    model = Post
-    template_name = "blog/post_list.html"
-    context_object_name = "posts"
 
-    def get_queryset(self):
-        qs = Post.objects.select_related("author__user", "category").prefetch_related("tags")
-        if self.request.user.is_staff:
-            return qs.order_by("-created_date")
-        return qs.published().order_by("-created_date")
 
 
 class PostDetailView(BlogSidebarMixin, DetailView):
@@ -226,7 +234,7 @@ class PostDeleteView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixi
         return self.request.user.is_staff or obj.author.user == self.request.user
 
     def get_success_url(self):
-        return reverse_lazy("blog:post_list")
+        return reverse_lazy("blog:home")
 
 
 # Backwards-compatible wrappers for old routes (pk-based)
@@ -586,7 +594,7 @@ class BookmarkToggleView(LoginRequiredMixin, View):
             })
 
         # Redirect back to referring page or post detail
-        next_url = request.POST.get('next', request.META.get('HTTP_REFERER', 'blog:post_list'))
+        next_url = request.POST.get('next', request.META.get('HTTP_REFERER', 'blog:home'))
         return redirect(next_url)
 
 

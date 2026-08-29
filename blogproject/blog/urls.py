@@ -10,7 +10,7 @@ urlpatterns = [
     path("", views.home, name="home"),
 
     # New slug-based routes
-    path("posts/", views.PostListView.as_view(), name="post_list"),
+    
     path(
         "post/create/",
         views.PostCreateView.as_view(),
