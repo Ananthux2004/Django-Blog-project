@@ -15,3 +15,14 @@ def sidebar_context(request):
             post_count=Count('posts')
         ).order_by('-post_count')[:15],
     }
+def categories_processor(request):
+    """
+    Makes non-empty categories available globally to all templates for the navbar.
+    """
+    categories = Category.objects.annotate(
+        post_count=Count('posts')
+    ).filter(post_count__gt=0).order_by('name')
+    
+    return {
+        'navbar_categories': categories
+    }

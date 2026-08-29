@@ -360,13 +360,13 @@ class SearchResultsView(BlogSidebarMixin, ListView):
         return context
 
 
-class CategoryListView(ListView):
-    model = Category
-    template_name = 'blog/category_list.html'
-    context_object_name = 'categories'
+# class CategoryListView(ListView):
+#     model = Category
+#     template_name = 'blog/category_list.html'
+#     context_object_name = 'categories'
     
-    def get_queryset(self):
-        return Category.objects.annotate(post_count=Count('posts')).order_by('name')
+#     def get_queryset(self):
+#         return Category.objects.annotate(post_count=Count('posts')).order_by('name')
 
 
 class CategoryDetailView(BlogSidebarMixin, DetailView):
