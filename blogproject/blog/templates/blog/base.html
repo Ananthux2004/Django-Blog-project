@@ -31,6 +31,29 @@
     {% block extra_css %}{% endblock %}
   </head>
 
+  {% if user.is_authenticated %}
+<script>
+    (function () {
+        // Idle timeout duration in milliseconds (matches 30 minutes in settings.py)
+        const IDLE_TIMEOUT = 30 * 60 * 1000; 
+        let idleTimer;
+
+        function resetTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                // Redirect to logout or login page upon inactivity
+                window.location.href = "{% url 'accounts:logout' %}"; 
+            }, IDLE_TIMEOUT);
+        }
+
+        // Listen for user activity events
+        const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+        events.forEach(event => document.addEventListener(event, resetTimer, true));
+
+        resetTimer();
+    })();
+</script>
+{% endif %}
   <body>
     <!-- Navbar Partial Include -->
     {% include "blog/partials/navbar.html" %}

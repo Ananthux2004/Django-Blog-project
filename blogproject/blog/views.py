@@ -25,6 +25,7 @@ from django.shortcuts import render
 from django.core.cache import cache
 from django.db.models import Count
 from .models import Post, Category, Tag
+from .models import Notification
 
 User = get_user_model()
 
@@ -628,24 +629,24 @@ class UserPostListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         qs = self.get_author_qs()
-        status_param = self.request.GET.get('status')
-        sort_param = self.request.GET.get('sort', 'newest')
+        status_param = self.request.GET.get("status")
+        sort_param = self.request.GET.get("sort", "newest")
 
         # Filter by status tab selection
-        if status_param == 'draft':
-            qs = qs.filter(Q(status__iexact='draft') | Q(status='D'))
-        elif status_param == 'published':
-            qs = qs.filter(Q(status__iexact='published') | Q(status='P'))
-        elif status_param == 'featured':
-            qs = qs.filter(Q(is_featured=True) | Q(featured=True))
+        if status_param == "draft":
+            qs = qs.filter(Q(status__iexact="draft") | Q(status="D"))
+        elif status_param == "published":
+            qs = qs.filter(Q(status__iexact="published") | Q(status="P"))
+        elif status_param == "featured":
+            qs = qs.filter(is_featured=True)  # Removed Q(featured=True)
 
         # Sorting choices
-        if sort_param == 'oldest':
-            qs = qs.order_by('created_date')
-        elif sort_param == 'views':
-            qs = qs.order_by('-views')
+        if sort_param == "oldest":
+            qs = qs.order_by("created_date")
+        elif sort_param == "views":
+            qs = qs.order_by("-views")
         else:
-            qs = qs.order_by('-created_date')
+            qs = qs.order_by("-created_date")
 
         return qs
 
@@ -662,3 +663,32 @@ class UserPostListView(LoginRequiredMixin, ListView):
         context['current_status'] = self.request.GET.get('status', '')
         context['current_sort'] = self.request.GET.get('sort', 'newest')
         return context
+class NotificationListView(LoginRequiredMixin, ListView):
+    model = Notification
+    template_name = "blog/notifications.html"
+    context_object_name = "notifications"
+    paginate_by = 15
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+
+
+@login_required
+def mark_notification_read(request, pk):
+    notification = get_object_or_404(
+        Notification, pk=pk, recipient=request.user
+    )
+    notification.is_read = True
+    notification.save()
+
+    if notification.target_url:
+        return redirect(notification.target_url)
+    return redirect("blog:notification_list")
+
+
+@login_required
+def mark_all_notifications_read(request):
+    Notification.objects.filter(
+        recipient=request.user, is_read=False
+    ).update(is_read=True)
+    return redirect("blog:notification_list")

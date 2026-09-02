@@ -68,6 +68,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'blog.context_processors.sidebar_context',
                 'blog.context_processors.categories_processor',
+                'blog.context_processors.notification_context',
             ],
         },
     },
@@ -173,4 +174,16 @@ cloudinary.config(
     secure=True,
 )
 
+# ==============================================================================
+# SESSION & AUTO-LOGOUT CONFIGURATION
+# ==============================================================================
+
+# 1. Set idle timeout duration in seconds (e.g., 1800 seconds = 30 minutes)
+SESSION_COOKIE_AGE = 1800  # Adjust as needed (e.g., 900 for 15 mins)
+
+# 2. Reset the session countdown timer on every user interaction / page request
+SESSION_SAVE_EVERY_REQUEST = True
+
+# 3. Force session cookies to expire when the user closes their browser
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

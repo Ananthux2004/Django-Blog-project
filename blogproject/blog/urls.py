@@ -62,6 +62,21 @@ urlpatterns = [
         views.delete_comment,
         name="delete_comment",
     ),
+    path(
+        "notifications/",
+        views.NotificationListView.as_view(),
+        name="notification_list",
+    ),
+    path(
+        "notifications/<int:pk>/read/",
+        views.mark_notification_read,
+        name="mark_notification_read",
+    ),
+    path(
+        "notifications/mark-all-read/",
+        views.mark_all_notifications_read,
+        name="mark_all_notifications_read",
+    ),
     path('search/', views.SearchResultsView.as_view(), name='search'),
     # path('categories/', views.CategoryListView.as_view(), name='category_list'),
     path('category/<slug:slug>/', views.CategoryDetailView.as_view(), name='category_detail'),
