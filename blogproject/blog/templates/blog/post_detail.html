@@ -1,128 +1,251 @@
 {% extends "blog/base.html" %}
-{% block content %}
-<div class="container my-5">
-    <div class="row">
-        <!-- Main Content Column -->
-        <div class="col-md-8">
-            <nav aria-label="breadcrumb">
-              <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'blog:post_list' %}">Blog</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
-              </ol>
-            </nav>
-            
-            <h1 class="display-4 mb-3">{{ post.title }}</h1>
-            
-            <!-- Article Meta & Bookmark Action Row -->
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 text-muted mb-4 pb-3 border-bottom">
-                <div>
-                    By <strong><span>👤 <a href="{% url 'blog:author_detail' post.author.user.username %}" class="text-decoration-none text-secondary fw-semibold">@{{ post.author.username }}</a></span></strong> 
-                    | Published on {{ post.published_date|date:"F j, Y" }} 
-                    | <span>{{ post.reading_time }} min read</span>
-                </div>
+{% load static %}
 
-                <!-- Bookmark / Save Post Button -->
-                <div>
-                    {% if user.is_authenticated %}
-                        <form method="POST" action="{% url 'blog:toggle_bookmark' slug=post.slug %}" class="d-inline">
-                            {% csrf_token %}
-                            {% if is_bookmarked or post.slug in user_bookmarked_slugs %}
-                                <button type="submit" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm" title="Remove from Saved Posts">
-                                    <i class="bi bi-bookmark-fill"></i>
-                                    <span>Saved</span>
-                                    <span class="badge bg-white text-primary ms-1">{{ post.bookmarks.count }}</span>
-                                </button>
-                            {% else %}
-                                <button type="submit" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm" title="Save Post">
-                                    <i class="bi bi-bookmark"></i>
-                                    <span>Save</span>
-                                    <span class="badge bg-primary text-white ms-1">{{ post.bookmarks.count }}</span>
-                                </button>
-                            {% endif %}
-                        </form>
+{% block content %}
+<link rel="stylesheet" href="{% static 'blog/css/post_detail.css' %}">
+
+<div class="container my-5" style="max-width: 860px;">
+
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 small text-uppercase tracking-wider fw-medium">
+            <li class="breadcrumb-item"><a href="{% url 'blog:home' %}" class="text-decoration-none">Blog</a></li>
+            {% if post.category %}
+                <li class="breadcrumb-item"><a href="{% url 'blog:category_detail' post.category.slug %}" class="text-decoration-none">{{ post.category.name }}</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active text-muted" aria-current="page">{{ post.reading_time|default:"5" }} min read</li>
+        </ol>
+    </nav>
+    
+    <!-- Post Main Title -->
+    <h1 class="display-4 fw-bold mb-4 text-dark">{{ post.title }}</h1>
+    
+    <!-- Article Meta Bar (Author, Date, Save Action) -->
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 text-muted mb-4 pb-4 border-bottom">
+        <div class="d-flex align-items-center gap-3">
+            <div class="position-relative">
+                {% if post.author.get_avatar_url %}
+                    <img 
+                        src="{{ post.author.get_avatar_url }}" 
+                        onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ post.author.user.username }}&background=0D6EFD&color=fff';" 
+                        class="rounded-circle shadow-sm" 
+                        width="48" 
+                        height="48" 
+                        style="object-fit: cover;" 
+                        alt="{{ post.author.user.username }}"
+                    >
+                {% else %}
+                    <img 
+                        src="https://ui-avatars.com/api/?name={{ post.author.user.username }}&background=0D6EFD&color=fff" 
+                        class="rounded-circle shadow-sm" 
+                        width="48" 
+                        height="48" 
+                        alt="{{ post.author.user.username }}"
+                    >
+                {% endif %}
+            </div>
+            <div>
+                <a href="{% url 'blog:author_detail' post.author.user.username %}" class="text-decoration-none text-dark fw-bold d-block">
+                    @{{ post.author.user.username }}
+                </a>
+                <small class="text-muted">{{ post.published_date|date:"F j, Y" }}</small>
+            </div>
+        </div>
+
+        <!-- Bookmark / Save Button -->
+        <div>
+            {% if user.is_authenticated %}
+                <form method="POST" action="{% url 'blog:toggle_bookmark' slug=post.slug %}" class="d-inline">
+                    {% csrf_token %}
+                    {% if is_bookmarked or post.slug in user_bookmarked_slugs %}
+                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 shadow-sm" title="Remove from Saved Posts">
+                            <i class="bi bi-bookmark-fill"></i>
+                            <span>Saved</span>
+                            <span class="badge bg-white text-primary ms-1">{{ post.bookmarks.count }}</span>
+                        </button>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" title="Log in to save this post">
+                        <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 shadow-sm" title="Save Post">
                             <i class="bi bi-bookmark"></i>
                             <span>Save</span>
-                            <span class="badge bg-secondary text-white ms-1">{{ post.bookmarks.count }}</span>
-                        </a>
+                            <span class="badge bg-primary text-white ms-1">{{ post.bookmarks.count }}</span>
+                        </button>
                     {% endif %}
-                </div>
-            </div>
-            
-            {% if post.featured_image %}
-                <img src="{{ post.featured_image.url }}" class="img-fluid rounded mb-4 w-100" alt="{{ post.title }}">
+                </form>
+            {% else %}
+                <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1" title="Log in to save this post">
+                    <i class="bi bi-bookmark"></i>
+                    <span>Save</span>
+                    <span class="badge bg-secondary text-white ms-1">{{ post.bookmarks.count }}</span>
+                </a>
             {% endif %}
-            
-            <div class="blog-content mb-5">
-                {{ post.content|linebreaks }}
-            </div>
-            
-            <div class="mb-5">
-                <h5>Tags:</h5>
-                {% for tag in post.tags.all %}
-                    <a href="{% url 'blog:tag_detail' tag.slug %}" class="badge bg-secondary text-decoration-none me-1">#{{ tag.name }}</a>
-                {% endfor %}
-            </div>
-            
-            <!-- ==========================================
-                 COMMENTS ENGINE IMPLEMENTATION
-                 ========================================== -->
-            <hr class="my-5">
-            <div class="comments-section my-4">
-                <h3 class="mb-4">Comments ({{ comments.count }})</h3>
+        </div>
+    </div>
+    
+    <!-- Featured Image Hero -->
+    {% if post.featured_image %}
+        <div class="mb-5 overflow-hidden rounded-4 shadow-sm">
+            <img src="{{ post.featured_image.url }}" class="img-fluid w-100" style="max-height: 500px; object-fit: cover;" alt="{{ post.title }}">
+        </div>
+    {% endif %}
+    
+    <!-- Post Body -->
+    <article class="blog-content mb-5 fs-5 text-secondary lh-lg">
+        {{ post.content|linebreaks }}
+    </article>
+    
+    <!-- Tag Pills Row -->
+    {% if post.tags.all %}
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-5">
+            <span class="fw-semibold text-muted me-2"></span>
+            {% for tag in post.tags.all %}
+                <a href="{% url 'blog:tag_detail' tag.slug %}" class="btn btn-light btn-sm rounded-pill border px-3 text-secondary text-decoration-none">
+                    #{{ tag.name }}
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <hr class="my-5 text-muted opacity-25">
 
-                <!-- 1. Render Active Threads to All Visitors -->
-                {% for comment in comments %}
-                    <div class="card mb-3 border-light shadow-sm bg-light">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <strong class="text-primary">👤 {{ comment.name }}</strong>
-                                <small class="text-muted">{{ comment.created_date|date:"M d, Y H:i" }}</small>
+    
+
+    <!-- Threaded Comments Engine -->
+    <div class="comments-section mt-5 pt-3">
+        <h4 class="fw-bold mb-4 text-dark">Comments ({{ comments.count }})</h4>
+
+        <!-- Top Level Add Comment Box -->
+        <div class="d-flex gap-3 mb-5 align-items-start">
+            {% if user.is_authenticated %}
+                <img 
+                    src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D6EFD&color=fff" 
+                    class="comment-avatar flex-shrink-0" 
+                    alt="{{ user.username }}"
+                >
+                <div class="flex-grow-1">
+                    <form method="POST" action="{% url 'blog:add_comment' post.slug %}">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            {{ comment_form.content }}
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold">Comment</button>
+                        </div>
+                    </form>
+                </div>
+            {% else %}
+                <div class="w-100 p-3 bg-light rounded border text-muted small">
+                    Please <a href="{% url 'accounts:login' %}" class="fw-semibold text-primary">log in</a> to participate in the conversation.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Comment List -->
+        <div class="comment-thread">
+            {% for comment in comments %}
+                <div class="comment-item mb-4">
+                    <!-- Main Comment -->
+                    <div class="d-flex gap-3">
+                        <img 
+                            src="https://ui-avatars.com/api/?name={{ comment.name }}&background=0D6EFD&color=fff" 
+                            class="comment-avatar flex-shrink-0" 
+                            alt="{{ comment.name }}"
+                        >
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="fw-bold text-dark small">@{{ comment.name }}</span>
+                                <span class="text-muted small">&bull; {{ comment.created_date|date:"M d, Y" }}</span>
                             </div>
-                            <p class="card-text text-dark">{{ comment.content|linebreaks }}</p>
-
-                            <!-- Authenticated Actions Layer -->
-                            {% if user.is_authenticated %}
-                                <div class="mb-2">
-                                    <button class="btn btn-sm btn-link text-decoration-none p-0 me-3" type="button" data-bs-toggle="collapse" data-bs-target="#replyForm-{{ comment.pk }}">
-                                        Reply
+                            
+                            <div class="text-dark small lh-base mb-2">
+                                {{ comment.content|linebreaksbr }}
+                            </div>
+                            
+                            <!-- Comment Actions -->
+                            <div class="comment-actions d-flex align-items-center gap-3">
+                                {% if user.is_authenticated %}
+                                    <button class="btn btn-link p-0 d-inline-flex align-items-center gap-1" type="button" data-bs-toggle="collapse" data-bs-target="#replyForm-{{ comment.pk }}">
+                                        <i class="bi bi-reply-fill"></i> Reply
                                     </button>
                                     {% if user == comment.user or user.is_staff %}
-                                        <a href="{% url 'blog:edit_comment' comment.pk %}" class="btn btn-sm btn-link text-decoration-none p-0 me-3 text-warning">Edit</a>
-                                        <a href="{% url 'blog:delete_comment' comment.pk %}" class="btn btn-sm btn-link text-decoration-none p-0 text-danger" onclick="return confirm('Are you sure you want to delete this comment?');">Delete</a>
+                                        <button class="btn btn-link p-0 text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#editForm-{{ comment.pk }}">Edit</button>
+                                        <a href="{% url 'blog:delete_comment' comment.pk %}" class="btn btn-link p-0 text-danger" onclick="return confirm('Are you sure you want to delete this comment?');">Delete</a>
                                     {% endif %}
-                                </div>
+                                {% endif %}
+                            </div>
 
-                                <!-- Dynamic Reply Drawer -->
-                                <div class="collapse mt-2 mb-3" id="replyForm-{{ comment.pk }}">
-                                    <div class="card card-body bg-white border-light shadow-none">
-                                        <form method="POST" action="{% url 'blog:reply_comment' post.slug comment.pk %}">
-                                            {% csrf_token %}
-                                            <div class="mb-2">
-                                                {{ comment_form.content }}
-                                            </div>
-                                            <button type="submit" class="btn btn-sm btn-secondary">Submit Reply</button>
-                                        </form>
-                                    </div>
+                            <!-- Inline Edit Form (Main Comment) -->
+                            {% if user.is_authenticated and user == comment.user or user.is_staff %}
+                                <div class="collapse mt-3" id="editForm-{{ comment.pk }}">
+                                    <form method="POST" action="{% url 'blog:edit_comment' comment.pk %}">
+                                        {% csrf_token %}
+                                        <div class="mb-2">
+                                            <textarea name="content" class="form-control form-control-sm" rows="3" required>{{ comment.content }}</textarea>
+                                        </div>
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-light rounded-pill" data-bs-toggle="collapse" data-bs-target="#editForm-{{ comment.pk }}">Cancel</button>
+                                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">Save</button>
+                                        </div>
+                                    </form>
                                 </div>
                             {% endif %}
 
-                            <!-- Nested Replies Loop -->
+                            <!-- Collapse Form for Reply -->
+                            {% if user.is_authenticated %}
+                                <div class="collapse mt-3" id="replyForm-{{ comment.pk }}">
+                                    <form method="POST" action="{% url 'blog:reply_comment' post.slug comment.pk %}">
+                                        {% csrf_token %}
+                                        <div class="mb-2">
+                                            {{ comment_form.content }}
+                                        </div>
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-light rounded-pill" data-bs-toggle="collapse" data-bs-target="#replyForm-{{ comment.pk }}">Cancel</button>
+                                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">Reply</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Nested Reply Thread Line -->
+                    {% if comment.replies.all %}
+                        <div class="reply-tree mt-3">
                             {% for reply in comment.replies.all %}
                                 {% if reply.is_active and reply.is_approved %}
-                                    <div class="card mt-2 ms-4 border-left bg-white shadow-none">
-                                        <div class="card-body py-2">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <strong class="text-secondary">↪️ {{ reply.name }}</strong>
-                                                <small class="text-muted">{{ reply.created_date|date:"M d, Y H:i" }}</small>
+                                    <div class="d-flex gap-3 mb-3">
+                                        <img 
+                                            src="https://ui-avatars.com/api/?name={{ reply.name }}&background=6c757d&color=fff" 
+                                            class="reply-avatar flex-shrink-0" 
+                                            alt="{{ reply.name }}"
+                                        >
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="fw-bold text-dark small">@{{ reply.name }}</span>
+                                                <span class="text-muted small">&bull; {{ reply.created_date|date:"M d, Y" }}</span>
                                             </div>
-                                            <p class="card-text small text-dark mb-1">{{ reply.content|linebreaks }}</p>
+                                            
+                                            <div class="text-dark small lh-base mb-2">
+                                                {{ reply.content|linebreaksbr }}
+                                            </div>
                                             
                                             {% if user.is_authenticated and user == reply.user or user.is_staff %}
-                                                <div class="small">
-                                                    <a href="{% url 'blog:edit_comment' reply.pk %}" class="btn btn-sm btn-link text-decoration-none p-0 me-2 text-warning small">Edit</a>
-                                                    <a href="{% url 'blog:delete_comment' reply.pk %}" class="btn btn-sm btn-link text-decoration-none p-0 text-danger small" onclick="return confirm('Are you sure?');">Delete</a>
+                                                <div class="comment-actions d-flex align-items-center gap-3">
+                                                    <button class="btn btn-link p-0 text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#editReplyForm-{{ reply.pk }}">Edit</button>
+                                                    <a href="{% url 'blog:delete_comment' reply.pk %}" class="btn btn-link p-0 text-danger" onclick="return confirm('Are you sure?');">Delete</a>
+                                                </div>
+
+                                                <!-- Inline Edit Form (Reply) -->
+                                                <div class="collapse mt-3" id="editReplyForm-{{ reply.pk }}">
+                                                    <form method="POST" action="{% url 'blog:edit_comment' reply.pk %}">
+                                                        {% csrf_token %}
+                                                        <div class="mb-2">
+                                                            <textarea name="content" class="form-control form-control-sm" rows="2" required>{{ reply.content }}</textarea>
+                                                        </div>
+                                                        <div class="d-flex gap-2 justify-content-end">
+                                                            <button type="button" class="btn btn-sm btn-light rounded-pill" data-bs-toggle="collapse" data-bs-target="#editReplyForm-{{ reply.pk }}">Cancel</button>
+                                                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">Save</button>
+                                                        </div>
+                                                    </form>
                                                 </div>
                                             {% endif %}
                                         </div>
@@ -130,43 +253,15 @@
                                 {% endif %}
                             {% endfor %}
                         </div>
-                    </div>
-                {% empty %}
-                    <div class="alert alert-light border text-muted mb-4" role="alert">
-                        No comments yet. Be the first to share your thoughts!
-                    </div>
-                {% endfor %}
-
-                <!-- 2. Conditional Form Visibility Gate -->
-                <div class="card mt-4 shadow-sm">
-                    <div class="card-header bg-dark text-white">Leave a Comment</div>
-                    <div class="card-body">
-                        {% if user.is_authenticated %}
-                            <!-- Visible ONLY to Logged-in Users -->
-                            <form method="POST" action="{% url 'blog:add_comment' post.slug %}">
-                                {% csrf_token %}
-                                <div class="mb-3">
-                                    {{ comment_form.content }}
-                                </div>
-                                <button type="submit" class="btn btn-primary">Submit Comment</button>
-                            </form>
-                        {% else %}
-                            <!-- Displayed exclusively to Guest Browsers -->
-                            <div class="text-center py-3">
-                                <p class="text-muted mb-3">You must be logged in to participate in the discussion.</p>
-                                <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-outline-dark me-2">Login</a>
-                                <a href="{% url 'accounts:register' %}" class="btn btn-sm btn-primary">Create an Account</a>
-                            </div>
-                        {% endif %}
-                    </div>
+                    {% endif %}
                 </div>
-            </div>
-        </div>
-
-        <!-- Sidebar Column -->
-        <div class="col-md-4">
-            {% include "blog/partials/_sidebar.html" %}
+            {% empty %}
+                <div class="text-muted small py-3">
+                    No comments yet. Be the first to share your thoughts!
+                </div>
+            {% endfor %}
         </div>
     </div>
+
 </div>
 {% endblock %}

@@ -154,14 +154,17 @@ class PostAdmin(admin.ModelAdmin):
         "created_date",
         "published_date",
     )
+    # Allows fast inline toggling of featured status directly from the list table
+    list_editable = ("is_featured",)
+
     list_select_related = (
-    "author",
-    "category",
+        "author",
+        "category",
     )
 
     list_per_page = 20
-
     save_on_top = True
+
     search_fields = (
         "title",
         "excerpt",
@@ -180,6 +183,7 @@ class PostAdmin(admin.ModelAdmin):
     filter_horizontal = ("tags",)
     readonly_fields = (
         "views",
+        "reading_time",  # Added if reading_time is auto-calculated
         "created_date",
         "updated_date",
         "published_date",
@@ -235,6 +239,7 @@ class PostAdmin(admin.ModelAdmin):
         "publish_selected_posts",
         "unpublish_selected_posts",
         "mark_featured_selected_posts",
+        "unmark_featured_selected_posts",
     ]
 
     @admin.action(description="Publish selected posts")
@@ -246,15 +251,15 @@ class PostAdmin(admin.ModelAdmin):
             updated_date=now,
         )
         self.message_user(
-        request,
-        ngettext(
-            "%d post was successfully published.",
-            "%d posts were successfully published.",
-            updated,
+            request,
+            ngettext(
+                "%d post was successfully published.",
+                "%d posts were successfully published.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
         )
-        % updated,
-        messages.SUCCESS,
-    )
 
     @admin.action(description="Unpublish selected posts")
     def unpublish_selected_posts(self, request, queryset):
@@ -264,31 +269,43 @@ class PostAdmin(admin.ModelAdmin):
             updated_date=timezone.now(),
         )
         self.message_user(
-        request,
-        ngettext(
-           "%d post was successfully unpublished",
-           "%d post were successfully unpublished",
-            updated,
+            request,
+            ngettext(
+                "%d post was successfully unpublished.",
+                "%d posts were successfully unpublished.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
         )
-        % updated,
-        messages.SUCCESS,
-    )
 
     @admin.action(description="Mark selected posts as featured")
     def mark_featured_selected_posts(self, request, queryset):
         updated = queryset.update(is_featured=True)
         self.message_user(
-        request,
-        ngettext(
-            "%d post was marked as featured.",
-            "%d posts were marked as featured.",
-            updated,
+            request,
+            ngettext(
+                "%d post was marked as featured.",
+                "%d posts were marked as featured.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
         )
-        % updated,
-        messages.SUCCESS,
-    )
 
-
+    @admin.action(description="Unmark selected posts as featured")
+    def unmark_featured_selected_posts(self, request, queryset):
+        updated = queryset.update(is_featured=False)
+        self.message_user(
+            request,
+            ngettext(
+                "%d post was removed from featured.",
+                "%d posts were removed from featured.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = (

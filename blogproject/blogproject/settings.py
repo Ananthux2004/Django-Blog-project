@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
@@ -63,6 +67,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'blog.context_processors.sidebar_context',
+                'blog.context_processors.categories_processor',
+                'blog.context_processors.notification_context',
             ],
         },
     },
@@ -106,12 +112,18 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+# Legacy fallback setting required by django-cloudinary-storage
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+
+# Disable strict manifest lookup
+WHITENOISE_MANIFEST_STRICT = False
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -154,4 +166,24 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
 }
 
+# Explicitly configure the raw Cloudinary SDK for template rendering
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+    secure=True,
+)
+
+# ==============================================================================
+# SESSION & AUTO-LOGOUT CONFIGURATION
+# ==============================================================================
+
+# 1. Set idle timeout duration in seconds (e.g., 1800 seconds = 30 minutes)
+SESSION_COOKIE_AGE = 1800  # Adjust as needed (e.g., 900 for 15 mins)
+
+# 2. Reset the session countdown timer on every user interaction / page request
+SESSION_SAVE_EVERY_REQUEST = True
+
+# 3. Force session cookies to expire when the user closes their browser
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

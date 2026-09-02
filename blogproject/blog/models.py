@@ -3,6 +3,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 from django.urls import reverse
+from django.core.cache import cache
+
 
 class Author(models.Model):
     """
@@ -33,6 +35,17 @@ class Author(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def get_avatar_url(self):
+        """Returns uploaded profile picture URL or generates a dynamic initial avatar."""
+        if self.profile_picture:
+            try:
+                return self.profile_picture.url
+            except ValueError:
+                pass
+        username = self.user.username if self.user else "User"
+        return f"https://ui-avatars.com/api/?name={username}&background=0D6EFD&color=fff"
+
     def __str__(self):
         return self.user.username
 
@@ -44,8 +57,6 @@ class Author(models.Model):
             models.Index(fields=["joined_date"]),
             models.Index(fields=["updated_at"]),
         ]
-
-
 class Category(models.Model):
     name = models.CharField(max_length=200, unique=True)
 
@@ -182,6 +193,10 @@ class Post(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+        # Auto-populate published_date when status is changed to PUBLISHED
+        if self.status == self.StatusChoices.PUBLISHED and not self.published_date:
+            self.published_date = timezone.now()
+        cache.delete('homepage_latest_post_ids')
         super().save(*args, **kwargs)
 
     def publish(self):
@@ -259,8 +274,6 @@ class Comment(models.Model):
             models.Index(fields=["created_date"]),
             models.Index(fields=["is_active"]),
         ]
-from django.db import models
-from django.conf import settings
 
 class Bookmark(models.Model):
     user = models.ForeignKey(
@@ -283,3 +296,36 @@ class Bookmark(models.Model):
 
     def __str__(self):
         return f"{self.user.username} bookmarked {self.post.title}"
+    
+class Notification(models.Model):
+    class Type(models.TextChoices):
+        POST_PUBLISHED = "post_published", "New Post Published"
+        POST_FEATURED = "post_featured", "Post Featured"
+        SECURITY = "security", "Security Alert"
+        SYSTEM = "system", "System Update"
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sent_notifications",
+    )
+    verb = models.CharField(max_length=255)
+    target_url = models.CharField(max_length=255, blank=True, default="")
+    notification_type = models.CharField(
+        max_length=20, choices=Type.choices, default=Type.SYSTEM
+    )
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Notification for {self.recipient.username}: {self.verb}"

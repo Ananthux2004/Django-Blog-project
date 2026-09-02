@@ -1,221 +1,284 @@
 {% load static %}
-<!-- Link Custom Isolated SaaS Navbar Stylesheet -->
 <link rel="stylesheet" href="{% static 'blog/css/navbar.css' %}" />
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark custom-navbar">
-  <div class="container">
-    <!-- Brand Logo -->
-    <a class="navbar-brand fw-bold" href="/">DevBlog</a>
-
-    <!-- Mobile Hamburger Toggle Menu -->
-    <button
-      class="navbar-toggler border-0 shadow-none"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarNav"
-      aria-controls="navbarNav"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <!-- Collapsible Navigation Wrap Holder -->
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <!-- Left Side Navigation Elements -->
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'blog:post_list' %}">Posts</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'blog:category_list' %}"
-            >Categories</a
-          >
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'blog:tag_list' %}">Tags</a>
-        </li>
-      </ul>
-
-      <form
-        class="d-flex align-items-center"
-        action="{% url 'blog:search' %}"
-        method="get"
+<!-- TOP NAVBAR -->
+<nav
+  class="navbar navbar-expand bg-white border-bottom shadow-sm py-2 sticky-top"
+>
+  <div class="container-fluid px-lg-4">
+    <!-- Left: Hamburger Drawer Trigger + Brand Logo -->
+    <div class="d-flex align-items-center gap-2">
+      <button
+        class="btn text-dark border-0 p-1 fs-4 shadow-none"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#sidebarMenu"
+        aria-controls="sidebarMenu"
+        title="Open menu"
       >
-        <div class="input-group">
-          <input
-            type="search"
-            name="q"
-            class="form-control form-control-sm bg-light border-secondary-subtle"
-            placeholder="Search blog..."
-            value="{{ request.GET.q|default:'' }}"
-            aria-label="Search blog"
-            required
-          />
-          <button
-            class="btn btn-purple-primary btn-sm px-3"
-            type="submit"
-            aria-label="Submit search"
-          >
-            <i class="bi bi-search"></i>
-          </button>
-        </div>
-      </form>
+        <i class="bi bi-list"></i>
+      </button>
 
-      <!-- Right Side: Auth State Dynamic Controls Wrapper -->
-      <ul class="navbar-nav mb-2 mb-lg-0 align-items-center">
-        {% if user.is_authenticated %}
-        <!-- DISPLAY DROPDOWN IF LOGGED IN -->
-        <li class="nav-item dropdown ms-lg-2 position-relative">
-          <a
-            class="nav-link dropdown-toggle d-flex align-items-center p-0 custom-profile-toggle text-light"
-            href="#"
-            id="userProfileDropdown"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            <span class="me-2 small fw-medium d-inline-block text-nowrap">
-              {{ user.first_name|default:user.username }}
-            </span>
-            <div class="avatar-nav-wrapper">
-              {% if user.author.profile_picture %}
-              <img
-                src="{{ user.author.profile_picture.url }}"
-                class="rounded-circle profile-avatar-nav"
-                alt="{{ user.username }}"
-              />
-              {% else %}
-              <i class="bi bi-person-circle fs-4 text-light"></i>
-              {% endif %}
-            </div>
-          </a>
+      <a class="navbar-brand fw-bold me-2 fs-4 text-dark" href="/">DevBlog</a>
+    </div>
 
-          <!-- Dropdown Interactive Flyout Card Surface -->
-          <ul
-            class="dropdown-menu dropdown-menu-end shadow border-0 modern-nav-dropdown animate fade-in"
-            aria-labelledby="userProfileDropdown"
-          >
-            <li>
-              <a
-                class="dropdown-header-profile p-3 d-flex align-items-center bg-light rounded-top-3 text-decoration-none"
-                href="{% url 'blog:author_detail' user.username %}"
-              >
-                <div class="me-3 position-relative">
-                  {% if user.author.profile_picture %}
-                  <img
-                    src="{{ user.author.profile_picture.url }}"
-                    class="rounded-circle profile-avatar-dropdown"
-                    alt="{{ user.username }}"
-                  />
-                  {% else %}
-                  <i class="bi bi-person-circle fs-2 text-secondary"></i>
-                  {% endif %}
-                </div>
-                <div class="overflow-hidden">
-                  <h6 class="mb-0 text-dark fw-bold text-truncate">
-                    {% if user.get_full_name %}{{ user.get_full_name }}{% else
-                    %}{{ user.username }}{% endif %}
-                  </h6>
-                  <small class="text-muted d-block mt-0.5">Member</small>
-                </div>
-              </a>
-            </li>
+    <!-- Center: Search Input -->
+    <form
+      class="d-flex align-items-center flex-grow-1 mx-2 mx-lg-4"
+      style="max-width: 280px"
+      action="{% url 'blog:search' %}"
+      method="get"
+    >
+      <div class="position-relative w-100">
+        <i
+          class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted fs-6"
+        ></i>
+        <input
+          type="search"
+          name="q"
+          class="form-control rounded-pill bg-light border-0 ps-5 py-1.5 shadow-none text-dark fs-6"
+          placeholder="Search"
+          value="{{ request.GET.q|default:'' }}"
+          aria-label="Search"
+          required
+        />
+      </div>
+    </form>
 
-            <li><hr class="dropdown-divider my-1 text-black-50" /></li>
+    <!-- Right: Write CTA & User Menu -->
+    <div class="d-flex align-items-center gap-2 gap-lg-3 ms-auto">
+      {% if user.is_authenticated %}
+      <a
+        href="{% url 'blog:post_create' %}"
+        class="btn btn-sm btn-dark rounded-pill px-3 d-flex align-items-center gap-1"
+      >
+        <i class="bi bi-pencil-square"></i>
+        <span class="d-none d-sm-inline">Write</span>
+      </a>
 
-            <li>
-              <a
-                class="dropdown-item py-2 d-flex align-items-center gap-2"
-                href="{% url 'blog:profile_edit' %}"
-              >
-                <i class="bi bi-person text-muted fs-5"></i>
-                <span>Edit Profile</span>
-              </a>
-            </li>
+      <!-- User Profile Dropdown -->
+      <div class="dropdown">
+        <a
+          class="nav-link dropdown-toggle d-flex align-items-center p-0 custom-profile-toggle text-dark"
+          href="#"
+          id="userProfileDropdown"
+          role="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <div class="avatar-nav-wrapper">
+            {% if user.author %}
+            <img
+              src="{{ user.author.get_avatar_url }}"
+              class="rounded-circle profile-avatar-nav"
+              alt="{{ user.username }}"
+              style="width: 34px; height: 34px; object-fit: cover"
+            />
+            {% else %}
+            <img
+              src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D6EFD&color=fff"
+              class="rounded-circle profile-avatar-nav"
+              alt="{{ user.username }}"
+              style="width: 34px; height: 34px; object-fit: cover"
+            />
+            {% endif %}
+          </div>
+        </a>
 
-            <li>
-              <a
-                class="dropdown-item py-2 d-flex align-items-center justify-content-between gap-2"
-                href="#"
-              >
-                <div class="d-flex align-items-center gap-2">
-                  <i class="bi bi-bell text-muted fs-5"></i>
-                  <span>Notifications</span>
-                </div>
-                {% if unread_notifications_count %}
-                <span class="badge bg-danger rounded-pill"
-                  >{{ unread_notifications_count }}</span
-                >
+        <ul
+          class="dropdown-menu dropdown-menu-end shadow border-0 modern-nav-dropdown animate fade-in mt-2"
+          aria-labelledby="userProfileDropdown"
+        >
+          <li>
+            <a
+              class="dropdown-header-profile p-3 d-flex align-items-center bg-light rounded-top-3 text-decoration-none"
+              href="{% url 'blog:author_detail' user.username %}"
+            >
+              <div class="me-3 position-relative">
+                {% if user.author %}
+                <img
+                  src="{{ user.author.get_avatar_url }}"
+                  class="rounded-circle profile-avatar-dropdown"
+                  alt="{{ user.username }}"
+                  style="width: 40px; height: 40px; object-fit: cover"
+                />
+                {% else %}
+                <img
+                  src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D6EFD&color=fff"
+                  class="rounded-circle profile-avatar-dropdown"
+                  alt="{{ user.username }}"
+                  style="width: 40px; height: 40px; object-fit: cover"
+                />
                 {% endif %}
-              </a>
-            </li>
-
-            <li>
-              <a
-                class="dropdown-item py-2 d-flex align-items-center gap-2"
-                href="{% url 'blog:author_detail' user.username %}"
+              </div>
+              <div class="overflow-hidden">
+                <h6 class="mb-0 text-dark fw-bold text-truncate">
+                  {% if user.get_full_name %}{{ user.get_full_name }}{% else
+                  %}{{ user.username }}{% endif %}
+                </h6>
+                <small class="text-muted d-block mt-0.5">Member</small>
+              </div>
+            </a>
+          </li>
+          <li><hr class="dropdown-divider my-1 text-black-50" /></li>
+          <li>
+            <a
+              class="dropdown-item py-2 d-flex align-items-center gap-2"
+              href="{% url 'blog:dashboard' %}"
+            >
+              <i class="bi bi-speedometer2 text-muted fs-5"></i>
+              <span>Author Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="dropdown-item py-2 d-flex align-items-center gap-2"
+              href="{% url 'blog:profile_edit' %}"
+            >
+              <i class="bi bi-person text-muted fs-5"></i>
+              <span>Edit Profile</span>
+            </a>
+          </li>
+          <!-- Notifications Menu Item with Badge -->
+          <li>
+            <a
+              class="dropdown-item py-2 rounded d-flex align-items-center justify-content-between"
+              href="{% url 'blog:notification_list' %}"
+            >
+              <span><i class="bi bi-bell me-2"></i> Notifications</span>
+              {% if unread_notifications_count > 0 %}
+              <span class="badge bg-danger rounded-pill"
+                >{{ unread_notifications_count }}</span
               >
-                <i class="bi bi-file-earmark-text text-muted fs-5"></i>
-                <span>My Posts</span>
-              </a>
-            </li>
-            <li>
-              <a
-                class="dropdown-item py-2 d-flex align-items-center gap-2"
-                href="{% url 'blog:saved_posts' %}"
+              {% endif %}
+            </a>
+          </li>
+          <li>
+            <a
+              class="dropdown-item py-2 d-flex align-items-center gap-2"
+              href="{% url 'blog:saved_posts' %}"
+            >
+              <i class="bi bi-bookmark-heart text-muted fs-5"></i>
+              <span>Saved Posts</span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="dropdown-item py-2 d-flex align-items-center gap-2"
+              href="{% url 'accounts:settings' %}"
+            >
+              <i class="bi bi-gear text-muted fs-5"></i>
+              <span>Settings</span>
+            </a>
+          </li>
+          <li><hr class="dropdown-divider my-1 text-black-50" /></li>
+          <li class="px-2 pb-1 pt-0.5">
+            <form
+              method="post"
+              action="{% url 'accounts:logout' %}"
+              class="m-0 p-0"
+            >
+              {% csrf_token %}
+              <button
+                type="submit"
+                class="dropdown-item py-2 d-flex align-items-center gap-2 rounded text-danger fw-medium w-100 border-0 bg-transparent"
               >
-                <i class="bi bi-bookmark-heart text-muted fs-5"></i>
-                <span>Saved Posts</span>
-              </a>
-            </li>
-            <li>
-              <a
-                class="dropdown-item py-2 d-flex align-items-center gap-2"
-                href="{% url 'accounts:settings' %}"
-              >
-                <i class="bi bi-gear text-muted fs-5"></i>
-                <span>Settings</span>
-              </a>
-            </li>
-
-            <li><hr class="dropdown-divider my-1 text-black-50" /></li>
-
-            <li class="px-2 pb-1 pt-0.5">
-              <form
-                method="post"
-                action="{% url 'accounts:logout' %}"
-                class="m-0 p-0"
-              >
-                {% csrf_token %}
-                <button
-                  type="submit"
-                  class="dropdown-item py-2 d-flex align-items-center gap-2 rounded text-danger fw-medium w-100 border-0 bg-transparent"
-                >
-                  <i class="bi bi-box-arrow-right fs-5"></i>
-                  <span>Logout</span>
-                </button>
-              </form>
-            </li>
-          </ul>
-        </li>
-        {% else %}
-        <!-- UNIFIED LOGIN & SIGNUP LINKS -->
-        <li class="nav-item">
-          <a class="nav-link auth-nav-link" href="{% url 'accounts:login' %}"
-            >Login</a
-          >
-        </li>
-        <li class="nav-item">
-          <a class="nav-link auth-nav-link" href="{% url 'accounts:register' %}"
-            >Signup</a
-          >
-        </li>
-        {% endif %}
-      </ul>
+                <i class="bi bi-box-arrow-right fs-5"></i>
+                <span>Logout</span>
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+      {% else %}
+      <a
+        class="btn btn-sm btn-link text-dark text-decoration-none px-2"
+        href="{% url 'accounts:login' %}"
+        >Sign In</a
+      >
+      <a
+        class="btn btn-sm btn-dark rounded-pill px-3"
+        href="{% url 'accounts:register' %}"
+        >Get Started</a
+      >
+      {% endif %}
     </div>
   </div>
 </nav>
 
-<!-- JavaScript Bootstrap Controller Event Hooks -->
-<script src="{% static 'blog/js/navbar.js' %}" defer></script>
+<!-- MEDIUM-STYLE LEFT SIDEBAR (OFFCANVAS) -->
+<div
+  class="offcanvas offcanvas-start border-end bg-white text-dark medium-offcanvas"
+  tabindex="-1"
+  id="sidebarMenu"
+  aria-labelledby="sidebarMenuLabel"
+  style="width: 260px"
+>
+  <div class="offcanvas-header border-bottom py-3">
+    <h5 class="offcanvas-title fw-bold fs-4" id="sidebarMenuLabel">DevBlog</h5>
+    <button
+      type="button"
+      class="btn-close shadow-none"
+      data-bs-dismiss="offcanvas"
+      aria-label="Close"
+    ></button>
+  </div>
+
+  <div class="offcanvas-body p-0 d-flex flex-column justify-content-between">
+    <div class="py-2">
+      <!-- Main Navigation -->
+      <div class="nav flex-column px-2 gap-1">
+        <a
+          href="/"
+          class="nav-link py-2.5 px-3 rounded text-dark d-flex align-items-center gap-3 sidebar-item {% if request.path == '/' %}active-sidebar{% endif %}"
+        >
+          <i class="bi bi-house-door fs-5 text-secondary"></i>
+          <span class="fw-medium">Home</span>
+        </a>
+
+        {% if user.is_authenticated %}
+
+        <!-- Popular Tags -->
+        <a
+          href="{% url 'blog:tag_list' %}"
+          class="nav-link py-2.5 px-3 rounded text-dark d-flex align-items-center gap-3 sidebar-item"
+        >
+          <i class="bi bi-tags fs-5 text-secondary"></i>
+          <span class="fw-medium">Popular Tags</span>
+        </a>
+
+        {% endif %}
+      </div>
+
+      <hr class="my-3 mx-3 text-secondary opacity-25" />
+
+      <!-- Categories Section -->
+      <div class="px-3">
+        <span
+          class="text-uppercase text-muted fw-bold extra-small tracking-wider mb-2 d-block px-1"
+          >Categories</span
+        >
+        <div class="nav flex-column">
+          {% for category in navbar_categories %}
+          <a
+            href="{% url 'blog:category_detail' slug=category.slug %}"
+            class="nav-link py-2 px-2 text-secondary d-flex justify-content-between align-items-center rounded sidebar-item"
+          >
+            <span class="small fw-medium text-dark">{{ category.name }}</span>
+            <span class="badge bg-light text-dark rounded-circle border"
+              >{{ category.post_count }}</span
+            >
+          </a>
+          {% empty %}
+          <span class="text-muted small px-1">No categories available</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="p-3 bg-white border-top text-center">
+      <p class="small text-muted mb-0">&copy; 2026 DevBlog Inc.</p>
+    </div>
+  </div>
+</div>

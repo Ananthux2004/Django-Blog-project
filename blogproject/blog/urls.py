@@ -2,7 +2,6 @@ from django.urls import path
 from django.views.generic import RedirectView
 from .views import AuthorProfileEditView
 from rest_framework.authtoken.views import obtain_auth_token
-
 from . import views,api_views
 
 app_name = "blog"
@@ -11,7 +10,7 @@ urlpatterns = [
     path("", views.home, name="home"),
 
     # New slug-based routes
-    path("posts/", views.PostListView.as_view(), name="post_list"),
+    
     path(
         "post/create/",
         views.PostCreateView.as_view(),
@@ -63,18 +62,32 @@ urlpatterns = [
         views.delete_comment,
         name="delete_comment",
     ),
+    path(
+        "notifications/",
+        views.NotificationListView.as_view(),
+        name="notification_list",
+    ),
+    path(
+        "notifications/<int:pk>/read/",
+        views.mark_notification_read,
+        name="mark_notification_read",
+    ),
+    path(
+        "notifications/mark-all-read/",
+        views.mark_all_notifications_read,
+        name="mark_all_notifications_read",
+    ),
     path('search/', views.SearchResultsView.as_view(), name='search'),
-    path('categories/', views.CategoryListView.as_view(), name='category_list'),
+    # path('categories/', views.CategoryListView.as_view(), name='category_list'),
     path('category/<slug:slug>/', views.CategoryDetailView.as_view(), name='category_detail'),
     path('tags/', views.TagListView.as_view(), name='tag_list'),
     path('tag/<slug:slug>/', views.TagDetailView.as_view(), name='tag_detail'),
     path("authors/", views.AuthorListView.as_view(), name="author_list"),
     path("author/<str:username>/", views.AuthorDetailView.as_view(), name="author_detail"),
     path('profile/edit/', AuthorProfileEditView.as_view(), name='profile_edit'),
-    path('my-posts/', views.MyPostsDashboardView.as_view(), name='my_posts'),
+    path('dashboard/', views.UserPostListView.as_view(), name='dashboard'),
     path('saved/', views.SavedPostsListView.as_view(), name='saved_posts'),
     path('posts/<slug:slug>/bookmark/', views.BookmarkToggleView.as_view(), name='toggle_bookmark'),
-    path('author/<str:username>/', views.AuthorDetailView.as_view(), name='author_detail'),
     path('api/v1/posts/', api_views.PostListCreateAPIView.as_view(), name='api_post_list'),
     path('api/v1/posts/<slug:slug>/', api_views.PostDetailAPIView.as_view(), name='api_post_detail'),
     path('api/v1/token-auth/', obtain_auth_token, name='api_token_auth'),

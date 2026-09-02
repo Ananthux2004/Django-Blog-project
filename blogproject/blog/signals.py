@@ -1,55 +1,177 @@
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
-from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from .models import Post
+from django.core.mail import send_mail
+from django.db.models.signals import post_delete, post_save, pre_save
+from django.dispatch import receiver
+from django.urls import reverse
 from rest_framework.authtoken.models import Token
+
+from .models import Notification, Post
 
 User = get_user_model()
 
 
+# ------------------------------------------------------------------
+# 1. PRE-SAVE SIGNALS (Cache previous state before model saves)
+# ------------------------------------------------------------------
+@receiver(pre_save, sender=Post)
+def cache_previous_post_state(sender, instance, **kwargs):
+    """Tracks if the post was already featured or published before saving."""
+    if instance.pk:
+        try:
+            old_post = Post.objects.get(pk=instance.pk)
+            instance._was_featured = old_post.is_featured
+            instance._was_published = old_post.status in ["published", "P"]
+        except Post.DoesNotExist:
+            instance._was_featured = False
+            instance._was_published = False
+    else:
+        instance._was_featured = False
+        instance._was_published = False
+
+
+@receiver(pre_save, sender=settings.AUTH_USER_MODEL)
+def cache_previous_user_state(sender, instance, **kwargs):
+    """Tracks email and password changes before user model saves."""
+    if instance.pk:
+        try:
+            old_user = User.objects.get(pk=instance.pk)
+            instance._old_email = old_user.email
+            instance._old_password = old_user.password
+        except User.DoesNotExist:
+            instance._old_email = ""
+            instance._old_password = ""
+
+
+# ------------------------------------------------------------------
+# 2. POST-SAVE SIGNALS (Post Created / Updated)
+# ------------------------------------------------------------------
 @receiver(post_save, sender=Post)
 def handle_post_save(sender, instance, created, **kwargs):
-    # 1. Invalidate homepage cache whenever a post is created or updated
-    cache.delete('homepage_latest_posts')
-    print("[SIGNAL TRIGGERED] Invalidated 'homepage_latest_posts' cache key.")
+    # A. Invalidate homepage cache whenever a post is created or updated
+    cache.delete("homepage_latest_posts")
+    print(
+        "[SIGNAL TRIGGERED] Invalidated 'homepage_latest_posts' cache key on post save."
+    )
 
-    # 2. Email notification logic (triggers only if published)
-    is_published = getattr(instance, 'status', 'published') == 'published'
-    
-    if created and is_published:
-        recipient_list = list(
-            User.objects.filter(is_active=True)
-            .exclude(email='')
-            .values_list('email', flat=True)
+    was_featured = getattr(instance, "_was_featured", False)
+    was_published = getattr(instance, "_was_published", False)
+    is_now_published = instance.status in ["published", "P"]
+
+    author_user = (
+        instance.author.user
+        if hasattr(instance.author, "user")
+        else instance.author
+    )
+
+    # B. Trigger In-App Notification: Admin marked post as featured
+    if instance.is_featured and not was_featured:
+        Notification.objects.create(
+            recipient=author_user,
+            verb=f"Your post '{instance.title}' is a featured post of DevBlog",
+            target_url=reverse(
+                "blog:post_detail", kwargs={"slug": instance.slug}
+            ),
+            notification_type=Notification.Type.POST_FEATURED,
+        )
+        print(f"[SIGNAL TRIGGERED] Featured notification sent to author.")
+
+    # C. Trigger In-App Notifications + Email Alert: Newly Published Article
+    # (Handles both newly created published posts AND posts transitioned from Draft -> Published)
+    if is_now_published and not was_published:
+        # Get all active users except the post author
+        active_recipients = User.objects.filter(is_active=True).exclude(
+            pk=author_user.pk
         )
 
-        if recipient_list:
+        # 1. Create In-App Notifications (Bulk Create for performance)
+        in_app_notifications = [
+            Notification(
+                recipient=user,
+                actor=author_user,
+                verb=f"{author_user.username} published a new article: '{instance.title}'",
+                target_url=reverse(
+                    "blog:post_detail", kwargs={"slug": instance.slug}
+                ),
+                notification_type=Notification.Type.POST_PUBLISHED,
+            )
+            for user in active_recipients
+        ]
+        if in_app_notifications:
+            Notification.objects.bulk_create(in_app_notifications)
+            print(
+                f"[SIGNAL TRIGGERED] Created in-app notifications for {len(in_app_notifications)} user(s)."
+            )
+
+        # 2. Send Email Notification
+        email_list = list(
+            active_recipients.exclude(email="").values_list("email", flat=True)
+        )
+        if email_list:
             subject = f"New Post Alert: {instance.title}"
             message = (
-                f"A new post titled '{instance.title}' has just been published on DevBlog!\n\n"
+                f"A new post titled '{instance.title}' has just been published on DevBlog by {author_user.username}!\n\n"
                 f"Check it out now on the website!"
             )
-            
+
             send_mail(
                 subject=subject,
                 message=message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devblog.com'),
-                recipient_list=recipient_list,
+                from_email=getattr(
+                    settings, "DEFAULT_FROM_EMAIL", "noreply@devblog.com"
+                ),
+                recipient_list=email_list,
                 fail_silently=True,
             )
-            print(f"[SIGNAL TRIGGERED] Email notification sent to {len(recipient_list)} user(s).")
+            print(
+                f"[SIGNAL TRIGGERED] Email notification sent to {len(email_list)} user(s)."
+            )
 
 
+# ------------------------------------------------------------------
+# 3. POST-DELETE SIGNAL (Post Deleted)
+# ------------------------------------------------------------------
 @receiver(post_delete, sender=Post)
 def handle_post_delete(sender, instance, **kwargs):
     # Invalidate cache when a post is removed
-    cache.delete('homepage_latest_posts')
-    print("[SIGNAL TRIGGERED] Invalidated 'homepage_latest_posts' cache key on deletion.")
+    cache.delete("homepage_latest_posts")
+    print(
+        "[SIGNAL TRIGGERED] Invalidated 'homepage_latest_posts' cache key on post deletion."
+    )
 
+
+# ------------------------------------------------------------------
+# 4. USER SIGNALS (Token Generation & Security Alerts)
+# ------------------------------------------------------------------
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_auth_token(sender, instance=None, created=False, **kwargs):
+def handle_user_save(sender, instance, created, **kwargs):
     if created:
+        # Create REST Framework token upon registration
         Token.objects.create(user=instance)
+        print(
+            f"[SIGNAL TRIGGERED] Auth Token created for user: {instance.username}"
+        )
+    else:
+        # Security Notifications: Email or Password changes
+        old_email = getattr(instance, "_old_email", None)
+        old_password = getattr(instance, "_old_password", None)
+
+        if old_email and old_email != instance.email:
+            Notification.objects.create(
+                recipient=instance,
+                verb="🔒 Your account email address was recently updated.",
+                notification_type=Notification.Type.SECURITY,
+            )
+            print(
+                f"[SIGNAL TRIGGERED] Security notification sent (Email Changed) to {instance.username}"
+            )
+        elif old_password and old_password != instance.password:
+            Notification.objects.create(
+                recipient=instance,
+                verb="🔒 Your account password was successfully changed.",
+                notification_type=Notification.Type.SECURITY,
+            )
+            print(
+                f"[SIGNAL TRIGGERED] Security notification sent (Password Changed) to {instance.username}"
+            )

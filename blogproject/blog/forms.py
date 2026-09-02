@@ -1,9 +1,23 @@
 from django import forms
 # Added Comment to the import below
 from .models import Post, Comment, Author
+from .models import Tag
+from django.utils.text import slugify  # <-- Add this import
 
 
 class PostForm(forms.ModelForm):
+    # Free-text input field for comma-separated tags
+    tags_input = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "",
+            }
+        ),
+        help_text="Separate tags with commas.",
+    )
+
     class Meta:
         model = Post
         fields = [
@@ -12,11 +26,9 @@ class PostForm(forms.ModelForm):
             "content",
             "featured_image",
             "category",
-            "tags",
-            "status",
-            "is_featured",
+            
         ]
-        
+
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control"}),
             "excerpt": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
@@ -25,11 +37,49 @@ class PostForm(forms.ModelForm):
                 attrs={"class": "form-control"}
             ),
             "category": forms.Select(attrs={"class": "form-select"}),
-            "tags": forms.SelectMultiple(attrs={"class": "form-select"}),
-            "status": forms.Select(attrs={"class": "form-select"}),
             "is_featured": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-populate tags_input when editing an existing post
+        if self.instance and self.instance.pk:
+            self.fields["tags_input"].initial = ", ".join(
+                tag.name for tag in self.instance.tags.all()
+            )
+
+    def save(self, commit=True):
+        instance = super().save(commit=commit)
+
+        def save_tags():
+            raw_tags = self.cleaned_data.get("tags_input", "")
+            tag_names = [
+                name.strip().lower()
+                for name in raw_tags.split(",")
+                if name.strip()
+            ]
+            tag_objects = []
+            for name in tag_names:
+                tag_obj, _ = Tag.objects.get_or_create(
+                    name=name,
+                    defaults={"slug": slugify(name)},
+                )
+                tag_objects.append(tag_obj)
+            instance.tags.set(tag_objects)
+
+        if commit:
+            save_tags()
+        else:
+            old_save_m2m = getattr(self, "save_m2m", None)
+
+            def custom_save_m2m():
+                if old_save_m2m:
+                    old_save_m2m()
+                save_tags()
+
+            self.save_m2m = custom_save_m2m
+
+        return instance
 # --- NEW COMMENT FORM ADDED BELOW ---
 
 class CommentForm(forms.ModelForm):

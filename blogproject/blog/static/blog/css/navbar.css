@@ -234,3 +234,70 @@
     transform: translateY(0) scale(1);
   }
 }
+.sidebar-item {
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.sidebar-item:hover {
+  background-color: #f1f3f5 !important;
+}
+
+.active-sidebar {
+  background-color: #e9ecef !important;
+  font-weight: 600;
+}
+
+.extra-small {
+  font-size: 0.75rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+/* Line clamping for article excerpts */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Icon & Link Hover Animations */
+.icon-hover {
+  transition: color 0.15s ease-in-out;
+}
+
+.icon-hover:hover {
+  color: #000 !important;
+}
+
+.hover-title:hover {
+  color: #242424 !important;
+}
+
+/* Offcanvas Sidebar Styles & Transitions */
+.medium-offcanvas {
+  transition: transform 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+.sidebar-item {
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.sidebar-item:hover {
+  background-color: #f2f2f2 !important;
+}
+
+.active-sidebar {
+  background-color: #e6e6e6 !important;
+  font-weight: 600;
+}
+
+.extra-small {
+  font-size: 0.725rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}

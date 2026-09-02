@@ -1,0 +1,62 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div class="container my-5" style="max-width: 800px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Notifications</h2>
+        {% if unread_notifications_count > 0 %}
+            <a href="{% url 'blog:mark_all_notifications_read' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-check2-all me-1"></i> Mark all as read
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="list-group shadow-sm border-0 rounded-3">
+        {% for notification in notifications %}
+            <a href="{% url 'blog:mark_notification_read' notification.pk %}" 
+               class="list-group-item list-group-item-action p-3 d-flex align-items-center justify-content-between {% if not notification.is_read %}bg-light border-start border-primary border-4{% endif %}">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle p-2 bg-primary-subtle text-primary">
+                        {% if notification.notification_type == 'post_featured' %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                        {% elif notification.notification_type == 'security' %}
+                            <i class="bi bi-shield-lock-fill text-danger"></i>
+                        {% else %}
+                            <i class="bi bi-bell-fill text-primary"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="mb-0 text-dark {% if not notification.is_read %}fw-bold{% endif %}">
+                            {{ notification.verb }}
+                        </p>
+                        <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                {% if not notification.is_read %}
+                    <span class="badge bg-primary rounded-pill small">New</span>
+                {% endif %}
+            </a>
+        {% empty %}
+            <div class="text-center py-5 bg-white rounded-3">
+                <i class="bi bi-bell-slash text-muted display-4 mb-3 d-block"></i>
+                <p class="text-muted mb-0">You have no notifications right now.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}

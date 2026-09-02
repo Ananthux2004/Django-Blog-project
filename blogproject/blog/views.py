@@ -10,9 +10,22 @@ from django.views.generic import View, CreateView, DeleteView, DetailView, ListV
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.core.cache import cache
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import HttpResponseNotAllowed
 
 from .forms import PostForm, CommentForm, AuthorProfileForm
 from .models import Post, Comment, Category, Tag, Author, Bookmark
+from django.shortcuts import render
+from django.db.models import Count
+from django.core.cache import cache
+from .models import Post, Category, Tag
+from django.shortcuts import render
+from django.core.cache import cache
+from django.db.models import Count
+from .models import Post, Category, Tag
+from .models import Notification
 
 User = get_user_model()
 
@@ -21,39 +34,57 @@ User = get_user_model()
 # CORE & HOMEPAGE VIEWS
 # ==========================================
 
+
 def home(request):
-    """Dynamic Homepage view passing post and sidebar context with low-level caching."""
-    if request.user.is_staff:
-        posts_qs = Post.objects.all()
-    else:
-        posts_qs = Post.objects.filter(status='published')
+    # 1. Top viewed posts for hero banner
+    top_viewed_posts = Post.objects.filter(status='published').order_by(
+        '-views'
+    )[:3]
 
-    # Query optimization
-    posts = posts_qs.select_related('author__user', 'category').prefetch_related('tags')
-    recent_qs = posts.order_by('-published_date')
+    # Convert to list to prevent subquery errors on sliced QuerySets in SQL/Django
+    top_viewed_ids = list(top_viewed_posts.values_list('id', flat=True))
 
-    # Caching latest posts query
-    latest_posts = cache.get('homepage_latest_posts')
-    if latest_posts is None:
-        latest_posts = list(recent_qs[:6])
-        cache.set('homepage_latest_posts', latest_posts, 60 * 15)
-        print("[CACHE MISS] Fetched latest posts from Database.")
+    # 2. Determine active tab
+    active_tab = request.GET.get('tab', 'for_you')
+
+    # 3. Filter query based on active tab and order by latest publication date
+    if active_tab == 'featured':
+        posts_qs = Post.objects.filter(
+            status='published', is_featured=True
+        ).order_by('-published_date')
     else:
-        print("[CACHE HIT] Loaded latest posts directly from Cache.")
+        # Default "For you" feed (excluding top hero banner posts)
+        posts_qs = (
+            Post.objects.filter(status='published')
+            .exclude(id__in=top_viewed_ids)
+            .order_by('-published_date')
+        )
+
+    # 4. Paginate
+    paginator = Paginator(posts_qs, 10)
+    page_number = request.GET.get('page', 1)
+    latest_posts = paginator.get_page(page_number)
+
+    # 5. Fetch tags for the sidebar (ADDED THIS STEP)
+    sidebar_tags = Tag.objects.annotate(
+        post_count=Count('posts', filter=Q(posts__status='published'))
+    ).filter(post_count__gt=0)
+
+    # 6. Handle AJAX request for infinite scroll
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(
+            request,
+            'blog/partials/_post_feed_items.html',
+            {'latest_posts': latest_posts},
+        )
 
     context = {
-        'posts': recent_qs,
+        'top_viewed_posts': top_viewed_posts,
         'latest_posts': latest_posts,
-        'featured_post': recent_qs.first(),
-        'recent_posts': recent_qs[:5],
-        'popular_posts': posts.order_by('-views')[:5],
-        'sidebar_categories': Category.objects.annotate(post_count=Count('posts')).order_by('name'),
-        'sidebar_tags': Tag.objects.annotate(post_count=Count('posts')).order_by('-post_count')[:10],
+        'active_tab': active_tab,
+        'sidebar_tags': sidebar_tags,
     }
-
-    return render(request, "blog/home.html", context)
-
-
+    return render(request, 'blog/home.html', context)
 # ==========================================
 # MIXINS & SIDEBAR CONTEXT
 # ==========================================
@@ -84,16 +115,7 @@ class BlogSidebarMixin:
 # POST CRUD VIEWS (INCORPORATING SIDEBAR)
 # ==========================================
 
-class PostListView(BlogSidebarMixin, ListView):
-    model = Post
-    template_name = "blog/post_list.html"
-    context_object_name = "posts"
 
-    def get_queryset(self):
-        qs = Post.objects.select_related("author__user", "category").prefetch_related("tags")
-        if self.request.user.is_staff:
-            return qs.order_by("-created_date")
-        return qs.published().order_by("-created_date")
 
 
 class PostDetailView(BlogSidebarMixin, DetailView):
@@ -128,7 +150,7 @@ class PostDetailView(BlogSidebarMixin, DetailView):
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
 
-        # Check if the current user is authenticated and is the author of this post
+        # Check if current user is authenticated and is the author of this post
         is_author = (
             request.user.is_authenticated 
             and hasattr(self.object, 'author') 
@@ -136,14 +158,18 @@ class PostDetailView(BlogSidebarMixin, DetailView):
             and self.object.author.user == request.user
         )
 
-        # Only increment view counter if the visitor is NOT the author
-        if not is_author:
+        # Retrieve viewed posts array from session
+        viewed_posts = request.session.get('viewed_posts', [])
+
+        # Only increment if visitor is NOT author and hasn't viewed this post in current session
+        if not is_author and self.object.pk not in viewed_posts:
             Post.objects.filter(pk=self.object.pk).update(views=F("views") + 1)
-            self.object.refresh_from_db()
+            self.object.refresh_from_db(fields=['views'])
+            
+            viewed_posts.append(self.object.pk)
+            request.session['viewed_posts'] = viewed_posts
 
         return response
-
-
 class PostCreateView(SuccessMessageMixin, LoginRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
@@ -152,14 +178,24 @@ class PostCreateView(SuccessMessageMixin, LoginRequiredMixin, CreateView):
     slug_field = "slug"
 
     def form_valid(self, form):
-        author, _ = Author.objects.get_or_create(user=self.request.user)
-        form.instance.author = author
-        return super().form_valid(form)
+        if hasattr(self.request.user, 'author'):
+            form.instance.author = self.request.user.author
+        else:
+            form.instance.author = self.request.user
+
+        action = self.request.POST.get('action')
+        if action == 'draft':
+            form.instance.status = 'draft'
+            response = super().form_valid(form)
+            # Redirect straight to dashboard filtered by drafts
+            return redirect(f"{reverse_lazy('blog:dashboard')}?status=draft")
+        else:
+            form.instance.status = 'published'
+            return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy("blog:post_detail", kwargs={"slug": self.object.slug})
-
-
+    
 class PostUpdateView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
     form_class = PostForm
@@ -172,10 +208,21 @@ class PostUpdateView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixi
         obj = self.get_object()
         return self.request.user.is_staff or obj.author.user == self.request.user
 
+    def form_valid(self, form):
+        # Set status based on the button submitted
+        if self.request.POST.get('action') == 'publish':
+            form.instance.status = getattr(Post.StatusChoices, 'PUBLISHED', 'published')
+        else:
+            form.instance.status = getattr(Post.StatusChoices, 'DRAFT', 'draft')
+
+        return super().form_valid(form)
+
     def get_success_url(self):
+        # Redirect drafts to dashboard so non-staff authors don't hit a 404 on post_detail
+        if self.object.status == getattr(Post.StatusChoices, 'DRAFT', 'draft'):
+            return reverse_lazy("blog:dashboard")
         return reverse_lazy("blog:post_detail", kwargs={"slug": self.object.slug})
-
-
+    
 class PostDeleteView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Post
     template_name = "blog/post_confirm_delete.html"
@@ -188,7 +235,7 @@ class PostDeleteView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixi
         return self.request.user.is_staff or obj.author.user == self.request.user
 
     def get_success_url(self):
-        return reverse_lazy("blog:post_list")
+        return reverse_lazy("blog:home")
 
 
 # Backwards-compatible wrappers for old routes (pk-based)
@@ -255,20 +302,22 @@ def reply_comment(request, slug, pk):
 def edit_comment(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
     
+    # Safe slug lookup whether it's a main comment or nested reply
+    post_slug = comment.post.slug if comment.post else comment.parent.post.slug
+
     if request.user != comment.user and not request.user.is_staff:
         messages.error(request, 'You do not have permission to edit this comment.')
-        return redirect('blog:post_detail', slug=comment.post.slug)
+        return redirect('blog:post_detail', slug=post_slug)
 
     if request.method == 'POST':
         form = CommentForm(request.POST, instance=comment)
         if form.is_valid():
             form.save()
             messages.success(request, 'Comment updated successfully.')
-            return redirect('blog:post_detail', slug=comment.post.slug)
-    else:
-        form = CommentForm(instance=comment)
-        
-    return render(request, 'blog/comment_form.html', {'form': form, 'comment': comment})
+        else:
+            messages.error(request, 'Failed to update comment. Please check your text.')
+    
+    return redirect('blog:post_detail', slug=post_slug)
 
 
 @login_required
@@ -320,13 +369,13 @@ class SearchResultsView(BlogSidebarMixin, ListView):
         return context
 
 
-class CategoryListView(ListView):
-    model = Category
-    template_name = 'blog/category_list.html'
-    context_object_name = 'categories'
+# class CategoryListView(ListView):
+#     model = Category
+#     template_name = 'blog/category_list.html'
+#     context_object_name = 'categories'
     
-    def get_queryset(self):
-        return Category.objects.annotate(post_count=Count('posts')).order_by('name')
+#     def get_queryset(self):
+#         return Category.objects.annotate(post_count=Count('posts')).order_by('name')
 
 
 class CategoryDetailView(BlogSidebarMixin, DetailView):
@@ -546,7 +595,7 @@ class BookmarkToggleView(LoginRequiredMixin, View):
             })
 
         # Redirect back to referring page or post detail
-        next_url = request.POST.get('next', request.META.get('HTTP_REFERER', 'blog:post_list'))
+        next_url = request.POST.get('next', request.META.get('HTTP_REFERER', 'blog:home'))
         return redirect(next_url)
 
 
@@ -566,3 +615,80 @@ class SavedPostsListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['total_saved'] = Bookmark.objects.filter(user=self.request.user).count()
         return context
+class UserPostListView(LoginRequiredMixin, ListView):
+    model = Post
+    template_name = "blog/my_posts.html"
+    context_object_name = "posts"
+    paginate_by = 10
+
+    def get_author_qs(self):
+        user = self.request.user
+        if hasattr(user, 'author'):
+            return Post.objects.filter(author=user.author)
+        return Post.objects.filter(Q(author=user) | Q(author__user=user))
+
+    def get_queryset(self):
+        qs = self.get_author_qs()
+        status_param = self.request.GET.get("status")
+        sort_param = self.request.GET.get("sort", "newest")
+
+        # Filter by status tab selection
+        if status_param == "draft":
+            qs = qs.filter(Q(status__iexact="draft") | Q(status="D"))
+        elif status_param == "published":
+            qs = qs.filter(Q(status__iexact="published") | Q(status="P"))
+        elif status_param == "featured":
+            qs = qs.filter(is_featured=True)  # Removed Q(featured=True)
+
+        # Sorting choices
+        if sort_param == "oldest":
+            qs = qs.order_by("created_date")
+        elif sort_param == "views":
+            qs = qs.order_by("-views")
+        else:
+            qs = qs.order_by("-created_date")
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        all_user_posts = self.get_author_qs()
+
+        # Counter stats for top dashboard cards
+        context['total_my_posts'] = all_user_posts.count()
+        context['published_my_posts'] = all_user_posts.filter(Q(status__iexact='published') | Q(status='P')).count()
+        context['draft_my_posts'] = all_user_posts.filter(Q(status__iexact='draft') | Q(status='D')).count()
+
+        # Active filter tracking for UI pills
+        context['current_status'] = self.request.GET.get('status', '')
+        context['current_sort'] = self.request.GET.get('sort', 'newest')
+        return context
+class NotificationListView(LoginRequiredMixin, ListView):
+    model = Notification
+    template_name = "blog/notifications.html"
+    context_object_name = "notifications"
+    paginate_by = 15
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+
+
+@login_required
+def mark_notification_read(request, pk):
+    notification = get_object_or_404(
+        Notification, pk=pk, recipient=request.user
+    )
+    notification.is_read = True
+    notification.save()
+
+    if notification.target_url:
+        return redirect(notification.target_url)
+    return redirect("blog:notification_list")
+
+
+@login_required
+def mark_all_notifications_read(request):
+    Notification.objects.filter(
+        recipient=request.user, is_read=False
+    ).update(is_read=True)
+    return redirect("blog:notification_list")
