@@ -12,6 +12,27 @@ from .models import Notification, Post
 User = get_user_model()
 
 
+def clear_homepage_cache():
+    """Helper function to invalidate all home page related cache keys."""
+    # Delete fixed section keys
+    cache.delete("home_top_viewed")
+    cache.delete("home_sidebar_tags")
+
+    # Clear initial pages for main feed tabs
+    feed_keys = [
+        "home_feed_for_you_page_1",
+        "home_feed_featured_page_1",
+    ]
+    cache.delete_many(feed_keys)
+
+    # Note: If using Redis or wanting a complete reset on post updates,
+    # cache.clear() can also be called here.
+    print(
+        "[SIGNAL TRIGGERED] Invalidated home page cache keys (hero, sidebar, and initial feed pages).",
+        flush=True,
+    )
+
+
 # ------------------------------------------------------------------
 # 1. PRE-SAVE SIGNALS (Cache previous state before model saves)
 # ------------------------------------------------------------------
@@ -49,11 +70,8 @@ def cache_previous_user_state(sender, instance, **kwargs):
 # ------------------------------------------------------------------
 @receiver(post_save, sender=Post)
 def handle_post_save(sender, instance, created, **kwargs):
-    # A. Invalidate homepage cache whenever a post is created or updated
-    cache.delete("homepage_latest_posts")
-    print(
-        "[SIGNAL TRIGGERED] Invalidated 'homepage_latest_posts' cache key on post save."
-    )
+    # A. Invalidate home page cache whenever a post is created or updated
+    clear_homepage_cache()
 
     was_featured = getattr(instance, "_was_featured", False)
     was_published = getattr(instance, "_was_published", False)
@@ -75,17 +93,18 @@ def handle_post_save(sender, instance, created, **kwargs):
             ),
             notification_type=Notification.Type.POST_FEATURED,
         )
-        print(f"[SIGNAL TRIGGERED] Featured notification sent to author.")
+        print(
+            f"[SIGNAL TRIGGERED] Featured notification sent to author.",
+            flush=True,
+        )
 
     # C. Trigger In-App Notifications + Email Alert: Newly Published Article
-    # (Handles both newly created published posts AND posts transitioned from Draft -> Published)
     if is_now_published and not was_published:
-        # Get all active users except the post author
         active_recipients = User.objects.filter(is_active=True).exclude(
             pk=author_user.pk
         )
 
-        # 1. Create In-App Notifications (Bulk Create for performance)
+        # 1. Create In-App Notifications
         in_app_notifications = [
             Notification(
                 recipient=user,
@@ -101,7 +120,8 @@ def handle_post_save(sender, instance, created, **kwargs):
         if in_app_notifications:
             Notification.objects.bulk_create(in_app_notifications)
             print(
-                f"[SIGNAL TRIGGERED] Created in-app notifications for {len(in_app_notifications)} user(s)."
+                f"[SIGNAL TRIGGERED] Created in-app notifications for {len(in_app_notifications)} user(s).",
+                flush=True,
             )
 
         # 2. Send Email Notification
@@ -125,7 +145,8 @@ def handle_post_save(sender, instance, created, **kwargs):
                 fail_silently=True,
             )
             print(
-                f"[SIGNAL TRIGGERED] Email notification sent to {len(email_list)} user(s)."
+                f"[SIGNAL TRIGGERED] Email notification sent to {len(email_list)} user(s).",
+                flush=True,
             )
 
 
@@ -135,10 +156,7 @@ def handle_post_save(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=Post)
 def handle_post_delete(sender, instance, **kwargs):
     # Invalidate cache when a post is removed
-    cache.delete("homepage_latest_posts")
-    print(
-        "[SIGNAL TRIGGERED] Invalidated 'homepage_latest_posts' cache key on post deletion."
-    )
+    clear_homepage_cache()
 
 
 # ------------------------------------------------------------------
@@ -147,13 +165,12 @@ def handle_post_delete(sender, instance, **kwargs):
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def handle_user_save(sender, instance, created, **kwargs):
     if created:
-        # Create REST Framework token upon registration
         Token.objects.create(user=instance)
         print(
-            f"[SIGNAL TRIGGERED] Auth Token created for user: {instance.username}"
+            f"[SIGNAL TRIGGERED] Auth Token created for user: {instance.username}",
+            flush=True,
         )
     else:
-        # Security Notifications: Email or Password changes
         old_email = getattr(instance, "_old_email", None)
         old_password = getattr(instance, "_old_password", None)
 
@@ -164,7 +181,8 @@ def handle_user_save(sender, instance, created, **kwargs):
                 notification_type=Notification.Type.SECURITY,
             )
             print(
-                f"[SIGNAL TRIGGERED] Security notification sent (Email Changed) to {instance.username}"
+                f"[SIGNAL TRIGGERED] Security notification sent (Email Changed) to {instance.username}",
+                flush=True,
             )
         elif old_password and old_password != instance.password:
             Notification.objects.create(
@@ -173,5 +191,6 @@ def handle_user_save(sender, instance, created, **kwargs):
                 notification_type=Notification.Type.SECURITY,
             )
             print(
-                f"[SIGNAL TRIGGERED] Security notification sent (Password Changed) to {instance.username}"
+                f"[SIGNAL TRIGGERED] Security notification sent (Password Changed) to {instance.username}",
+                flush=True,
             )
