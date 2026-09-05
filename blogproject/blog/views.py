@@ -13,7 +13,7 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed,HttpResponse
 
 from .forms import PostForm, CommentForm, AuthorProfileForm
 from .models import Post, Comment, Category, Tag, Author, Bookmark
@@ -37,71 +37,104 @@ User = get_user_model()
 
 def home(request):
     # ==========================================================================
+    # 0. HEAD REQUEST HANDLING (Fixes Gunicorn RFC 9110 warning)
+    # ==========================================================================
+    if request.method == "HEAD":
+        response = HttpResponse()
+        response["Content-Type"] = "text/html; charset=utf-8"
+        return response
+
+    # ==========================================================================
     # 1. TOP VIEWED POSTS (HERO BANNER) - CACHED
     # ==========================================================================
-    top_viewed_posts = cache.get('home_top_viewed')
-    
+    top_viewed_posts = cache.get("home_top_viewed")
+
     if top_viewed_posts is None:
-        print("🚨 [RENDER CACHE] MISS: Fetching Hero Top Viewed Posts from DB", flush=True)
-        # Evaluated to list so the objects are cached directly
-        top_viewed_posts = list(
-            Post.objects.select_related('author', 'category')
-            .filter(status='published')
-            .order_by('-views')[:3]
+        print(
+            "[RENDER CACHE] MISS: Fetching Hero Top Viewed Posts from DB",
+            flush=True,
         )
-        cache.set('home_top_viewed', top_viewed_posts, 1800)  # 30 mins
+        top_viewed_posts = list(
+            Post.objects.select_related("author", "category")
+            .filter(status="published")
+            .order_by("-views")[:3]
+        )
+        cache.set("home_top_viewed", top_viewed_posts, 1800)  # 30 mins
     else:
-        print("⚡ [RENDER CACHE] HIT: Serving Hero Top Viewed Posts from cache", flush=True)
+        print(
+            " [RENDER CACHE] HIT: Serving Hero Top Viewed Posts from cache",
+            flush=True,
+        )
 
     top_viewed_ids = [p.id for p in top_viewed_posts]
 
     # ==========================================================================
     # 2. ACTIVE TAB & PAGINATED FEED - CACHED PER TAB + PAGE
     # ==========================================================================
-    active_tab = request.GET.get('tab', 'for_you')
-    page_number = request.GET.get('page', '1')
+    active_tab = request.GET.get("tab", "for_you")
+    page_number = request.GET.get("page", "1")
 
-    # Unique cache key per tab and page combination
     feed_cache_key = f"home_feed_{active_tab}_page_{page_number}"
     latest_posts = cache.get(feed_cache_key)
 
     if latest_posts is None:
-        print(f"🚨 [RENDER CACHE] MISS: Fetching Feed ({active_tab}, Page {page_number}) from DB", flush=True)
-        
-        if active_tab == 'featured':
-            posts_qs = Post.objects.select_related('author', 'category').filter(
-                status='published', is_featured=True
-            ).order_by('-published_date')
+        print(
+            f" [RENDER CACHE] MISS: Fetching Feed ({active_tab}, Page {page_number}) from DB",
+            flush=True,
+        )
+
+        if active_tab == "featured":
+            posts_qs = Post.objects.select_related(
+                "author", "category"
+            ).filter(status="published", is_featured=True)
         else:
-            # Default "For you" feed (excluding top hero banner posts)
-            posts_qs = (
-                Post.objects.select_related('author', 'category')
-                .filter(status='published')
-                .exclude(id__in=top_viewed_ids)
-                .order_by('-published_date')
-            )
+            posts_qs = Post.objects.select_related(
+                "author", "category"
+            ).filter(status="published")
+            if top_viewed_ids:
+                posts_qs = posts_qs.exclude(id__in=top_viewed_ids)
+
+        posts_qs = posts_qs.order_by("-published_date")
 
         paginator = Paginator(posts_qs, 10)
         latest_posts = paginator.get_page(page_number)
+
+        # Force QuerySet evaluation inside the Page object before caching
+        _ = list(latest_posts.object_list)
+
         cache.set(feed_cache_key, latest_posts, 1800)  # 30 mins
     else:
-        print(f"⚡ [RENDER CACHE] HIT: Serving Feed ({active_tab}, Page {page_number}) from cache", flush=True)
+        print(
+            f" [RENDER CACHE] HIT: Serving Feed ({active_tab}, Page {page_number}) from cache",
+            flush=True,
+        )
 
     # ==========================================================================
     # 3. SIDEBAR TAGS - CACHED
     # ==========================================================================
-    sidebar_tags = cache.get('home_sidebar_tags')
-    
+    sidebar_tags = cache.get("home_sidebar_tags")
+
     if sidebar_tags is None:
-        print("🚨 [RENDER CACHE] MISS: Fetching Sidebar Tags from DB", flush=True)
-        sidebar_tags = list(
-            Tag.objects.annotate(
-                post_count=Count('posts', filter=Q(posts__status='published'))
-            ).filter(post_count__gt=0)
+        print(
+            " [RENDER CACHE] MISS: Fetching Sidebar Tags from DB",
+            flush=True,
         )
-        cache.set('home_sidebar_tags', sidebar_tags, 3600)  # 1 hour
+        sidebar_tags = list(Tag.objects.all())
+        cache.set("home_sidebar_tags", sidebar_tags, 1800)  # 30 mins
     else:
-        print("⚡ [RENDER CACHE] HIT: Serving Sidebar Tags from cache", flush=True)
+        print(
+            " [RENDER CACHE] HIT: Serving Sidebar Tags from cache",
+            flush=True,
+        )
+
+    context = {
+        "top_viewed_posts": top_viewed_posts,
+        "latest_posts": latest_posts,
+        "active_tab": active_tab,
+        "sidebar_tags": sidebar_tags,
+    }
+
+    return render(request, "blog/home.html", context)
 
     # ==========================================================================
     # 4. AJAX PAGINATION RESPONSE
