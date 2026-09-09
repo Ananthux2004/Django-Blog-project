@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import (
@@ -17,6 +16,7 @@ from django.views import View
 from .forms import (
     DeleteAccountForm,
     EmailChangeForm,
+    EmailOrUsernameLoginForm,
     RegistrationForm,
     StyledPasswordChangeForm,
 )
@@ -46,7 +46,9 @@ def register(request):
             Author.objects.get_or_create(user=user)
 
             login(request, user)
-            messages.success(request, "Registration successful. You are now logged in.")
+            messages.success(
+                request, "Registration successful. You are now logged in."
+            )
             return redirect("blog:home")
     else:
         form = RegistrationForm()
@@ -54,11 +56,12 @@ def register(request):
     return render(request, "accounts/register.html", {"form": form})
 
 
-# ---- Account Settings View (Phase 2.6.5 & Phase 2.6.6) ----
+# ---- Account Settings View ----
 class AccountSettingsView(LoginRequiredMixin, View):
     """
     Handles Password Change, Email Change, Notification, Privacy, and Account Deletion.
     """
+
     template_name = "accounts/settings.html"
 
     def get(self, request, *args, **kwargs):
@@ -90,21 +93,32 @@ class AccountSettingsView(LoginRequiredMixin, View):
             )
             if password_form.is_valid():
                 user = password_form.save()
-                update_session_auth_hash(request, user)  # Prevents logout after password change
-                messages.success(request, "Your password was successfully updated!")
+                update_session_auth_hash(
+                    request, user
+                )  # Prevents logout after password change
+                messages.success(
+                    request, "Your password was successfully updated!"
+                )
                 return redirect("accounts:settings")
             else:
-                messages.error(request, "Please correct the error(s) in the password form.")
+                messages.error(
+                    request,
+                    "Please correct the error(s) in the password form.",
+                )
 
         elif action == "change_email":
             active_tab = "email"
             email_form = EmailChangeForm(request.POST, instance=request.user)
             if email_form.is_valid():
                 email_form.save()
-                messages.success(request, "Your email address was updated successfully!")
+                messages.success(
+                    request, "Your email address was updated successfully!"
+                )
                 return redirect("accounts:settings")
             else:
-                messages.error(request, "Please correct the error(s) in the email form.")
+                messages.error(
+                    request, "Please correct the error(s) in the email form."
+                )
 
         elif action == "delete_account":
             active_tab = "delete"
@@ -112,25 +126,33 @@ class AccountSettingsView(LoginRequiredMixin, View):
             # Protection for staff/superuser accounts
             if request.user.is_staff or request.user.is_superuser:
                 messages.error(
-                    request, "Staff and Administrator accounts cannot be deleted through settings."
+                    request,
+                    "Staff and Administrator accounts cannot be deleted through settings.",
                 )
                 return redirect("accounts:settings")
 
-            delete_form = DeleteAccountForm(user=request.user, data=request.POST)
+            delete_form = DeleteAccountForm(
+                user=request.user, data=request.POST
+            )
             if delete_form.is_valid():
                 user = request.user
                 logout(request)
                 user.delete()  # Permanently deletes User and associated Author profile
-                messages.success(request, "Your account has been permanently deleted.")
+                messages.success(
+                    request, "Your account has been permanently deleted."
+                )
                 return redirect("blog:home")
             else:
                 messages.error(
-                    request, "Account deletion failed. Please check your password and try again."
+                    request,
+                    "Account deletion failed. Please check your password and try again.",
                 )
 
         elif action == "update_notifications":
             active_tab = "notifications"
-            messages.info(request, "Notification preferences saved (Placeholder).")
+            messages.info(
+                request, "Notification preferences saved (Placeholder)."
+            )
             return redirect("accounts:settings")
 
         elif action == "update_privacy":
@@ -150,12 +172,19 @@ class AccountSettingsView(LoginRequiredMixin, View):
         )
 
 
-# ---- Built-in auth views (login/logout/password change/reset) ----
+# ---- Built-in auth views ----
 class AuthLoginView(LoginView):
     template_name = "accounts/login.html"
-    authentication_form = AuthenticationForm
+    authentication_form = EmailOrUsernameLoginForm  # Uses custom form for dual email/username auth
     redirect_authenticated_user = True
     extra_context = {"title": "Login"}
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            "Invalid username/email or password. Please check your credentials and try again.",
+        )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         """
