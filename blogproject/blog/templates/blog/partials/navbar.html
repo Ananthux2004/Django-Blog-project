@@ -113,8 +113,7 @@
               </div>
               <div class="overflow-hidden">
                 <h6 class="mb-0 text-dark fw-bold text-truncate">
-                  {% if user.get_full_name %}{{ user.get_full_name }}{% else
-                  %}{{ user.username }}{% endif %}
+                  {{ user.get_full_name|default:user.username }}
                 </h6>
                 <small class="text-muted d-block mt-0.5">Member</small>
               </div>
