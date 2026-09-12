@@ -187,3 +187,8 @@ SESSION_SAVE_EVERY_REQUEST = True
 # 3. Force session cookies to expire when the user closes their browser
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.EmailOrUsernameModelBackend",
+    "django.contrib.auth.backends.ModelBackend",  # Default fallback
+]
