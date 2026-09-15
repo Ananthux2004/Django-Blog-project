@@ -1,0 +1,14 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'blog/css/accounts.css' %}" />
+{% endblock extra_css %}
+
+{% block content %}
+<div class="auth-body-wrapper">
+    <div class="auth-card shadow-lg">
+        {% block inner_content %}{% endblock %}
+    </div>
+</div>
+{% endblock content %}
